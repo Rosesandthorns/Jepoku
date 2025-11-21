@@ -13,6 +13,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
+type JepokuMode = 'normal' | 'hard';
+
 interface PuzzleLoaderProps {
   getPuzzleAction: () => Promise<Puzzle | null>;
   checkAnswersAction: (
@@ -20,9 +22,10 @@ interface PuzzleLoaderProps {
     state: ValidationResult,
     payload: FormData
   ) => Promise<ValidationResult>;
+  mode: JepokuMode;
 }
 
-export function PuzzleLoader({ getPuzzleAction, checkAnswersAction }: PuzzleLoaderProps) {
+export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: PuzzleLoaderProps) {
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -78,6 +81,6 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction }: PuzzleLoad
   const boundCheckAnswersAction = checkAnswersAction.bind(null, puzzle);
 
   return (
-    <GameBoard puzzle={puzzle} checkAnswersAction={boundCheckAnswersAction} />
+    <GameBoard puzzle={puzzle} checkAnswersAction={boundCheckAnswersAction} mode={mode} />
   );
 }

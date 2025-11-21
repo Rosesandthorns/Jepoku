@@ -23,7 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ALL_CRITERIA } from '@/lib/criteria';
+import { NORMAL_CRITERIA, HARD_CRITERIA } from '@/lib/criteria';
+
+type JepokuMode = 'normal' | 'hard';
 
 const initialValidationState: ValidationResult = {
   rowResults: [null, null, null],
@@ -37,6 +39,7 @@ interface GameBoardProps {
     prevState: ValidationResult,
     payload: FormData
   ) => Promise<ValidationResult>;
+  mode: JepokuMode;
 }
 
 function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
@@ -50,13 +53,17 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
   );
 }
 
-export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) => {
-  const [state, formAction] = useActionState(checkAnswersAction, initialValidationState);
+export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode }) => {
+  const boundAction = useMemo(() => checkAnswersAction.bind(null, puzzle), [checkAnswersAction, puzzle]);
+  const [state, formAction] = useActionState(boundAction, initialValidationState);
+
   const [score, setScore] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
 
   const puzzleId = useMemo(() => puzzle.grid.flat().map(p => p?.id).join('-'), [puzzle]);
+
+  const criteriaPool = mode === 'hard' ? HARD_CRITERIA : NORMAL_CRITERIA;
 
   useEffect(() => {
     const savedScore = localStorage.getItem('jepokuScore');
@@ -142,7 +149,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
                         <SelectValue placeholder={showAnswers ? puzzle.colAnswers[i] : `Col ${i + 1}`} />
                       </SelectTrigger>
                       <SelectContent>
-                        {ALL_CRITERIA.map((crit) => (
+                        {criteriaPool.map((crit) => (
                           <SelectItem key={crit} value={crit}>
                             {crit}
                           </SelectItem>
@@ -163,7 +170,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
                         <SelectValue placeholder={showAnswers ? puzzle.rowAnswers[i] : `Row ${i + 1}`} />
                       </SelectTrigger>
                       <SelectContent>
-                        {ALL_CRITERIA.map((crit) => (
+                        {criteriaPool.map((crit) => (
                           <SelectItem key={crit} value={crit}>
                             {crit}
                           </SelectItem>
@@ -209,7 +216,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
                 <div className="text-center space-y-4">
                     <p className="text-2xl font-bold text-green-600">You solved it!</p>
                     <Button asChild size="lg" className="w-full">
-                        <a href="/">Play Next Puzzle</a>
+                        <a href={mode === 'hard' ? '/?mode=hard' : '/'}>Play Next Puzzle</a>
                     </Button>
                 </div>
               ) : (

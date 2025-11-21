@@ -37,6 +37,11 @@ interface PokeApiMove {
     move: PokeApiResource;
 }
 
+interface PokeApiStat {
+    base_stat: number;
+    stat: PokeApiResource;
+}
+
 interface PokeApiPokemon {
   id: number;
   name:string;
@@ -44,6 +49,7 @@ interface PokeApiPokemon {
   abilities: PokeApiAbility[];
   moves: PokeApiMove[];
   species: PokeApiResource;
+  stats: PokeApiStat[];
 }
 
 interface PokeApiSpecies {
@@ -163,6 +169,18 @@ export const getAllPokemonWithDetails = unstable_cache(
           const isMega = await hasMegaEvolution(pokemonData.name);
           const region = generationToRegion[speciesData.generation.name] || 'Unknown';
 
+          const stats = { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 };
+          pokemonData.stats.forEach(s => {
+              switch(s.stat.name) {
+                  case 'hp': stats.hp = s.base_stat; break;
+                  case 'attack': stats.attack = s.base_stat; break;
+                  case 'defense': stats.defense = s.base_stat; break;
+                  case 'special-attack': stats.specialAttack = s.base_stat; break;
+                  case 'special-defense': stats.specialDefense = s.base_stat; break;
+                  case 'speed': stats.speed = s.base_stat; break;
+              }
+          });
+
 
           return {
             id: pokemonData.id,
@@ -178,6 +196,7 @@ export const getAllPokemonWithDetails = unstable_cache(
             isPartner: PARTNER_POKEMON.includes(pokemonData.name),
             isLegendary: speciesData.is_legendary,
             isMythical: speciesData.is_mythical,
+            stats,
           };
         } catch (e) {
           console.error(`Failed to process ${p.name}`, e)
@@ -192,6 +211,6 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen9-moves-abilities'],
+  ['all-pokemon-with-details-gen9-hard-mode'],
   { revalidate: 3600 * 24 } // Revalidate once a day
 );

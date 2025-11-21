@@ -12,6 +12,14 @@ export interface Pokemon {
   isPartner: boolean;
   isLegendary: boolean;
   isMythical: boolean;
+  stats: {
+    hp: number;
+    attack: number;
+    defense: number;
+    specialAttack: number;
+    specialDefense: number;
+    speed: number;
+  };
 }
 
 export interface Puzzle {

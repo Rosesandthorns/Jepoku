@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
   title: 'Jepoku',
@@ -9,8 +10,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  params,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
+  params: { mode?: string };
 }>) {
   return (
     <html lang="en">
