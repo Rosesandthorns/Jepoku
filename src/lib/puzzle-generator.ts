@@ -22,7 +22,22 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     if (pokemon.isLegendary) criteria.add('Legendary');
     if (pokemon.isMythical) criteria.add('Mythical');
     if (pokemon.region) criteria.add(pokemon.region);
+
+    // Abilities
     if (pokemon.abilities.includes('sturdy')) criteria.add('Has: Sturdy');
+    if (pokemon.abilities.includes('swift-swim')) criteria.add('Has: Swift Swim');
+    if (pokemon.abilities.includes('cursed-body')) criteria.add('Has: Cursed Body');
+    if (pokemon.abilities.includes('mold-breaker')) criteria.add('Has: Mold Breaker');
+    
+    // Moves
+    if (pokemon.moves.includes('brick-break')) criteria.add('Knows: Brick Break');
+    if (pokemon.moves.includes('grass-knot')) criteria.add('Knows: Grass Knot');
+    if (pokemon.moves.includes('iron-tail')) criteria.add('Knows: Iron Tail');
+    if (pokemon.moves.includes('cut')) criteria.add('Knows: Cut');
+    if (pokemon.moves.includes('flamethrower')) criteria.add('Knows: Flame Thrower');
+    if (pokemon.moves.includes('leer')) criteria.add('Knows: Leer');
+    if (pokemon.moves.includes('mud-slap')) criteria.add('Knows: Mud Slap');
+
     if (pokemon.canEvolve) criteria.add('Can Evolve');
     if (pokemon.isFinalEvolution) criteria.add('Final Evolution');
     if (pokemon.isPartner) criteria.add('Partner Pokemon');
@@ -45,10 +60,9 @@ async function createValidPuzzle(): Promise<Puzzle | null> {
         const rowAnswers = shuffledCriteria.slice(0, GRID_SIZE);
         const colAnswers = shuffledCriteria.slice(GRID_SIZE, GRID_SIZE * 2);
 
-        // Ensure all 6 criteria are unique
         const allAnswers = new Set([...rowAnswers, ...colAnswers]);
         if (allAnswers.size !== GRID_SIZE * 2) {
-            continue; // Try next attempt if criteria are not unique
+            continue;
         }
 
         const grid: (Pokemon | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
@@ -67,7 +81,6 @@ async function createValidPuzzle(): Promise<Puzzle | null> {
                 });
 
                 if (candidates.length > 0) {
-                    // Pick the first available candidate from the shuffled list
                     const chosenPokemon = candidates[0];
                     grid[r][c] = chosenPokemon;
                     usedPokemonIds.add(chosenPokemon.id);
@@ -89,7 +102,7 @@ async function createValidPuzzle(): Promise<Puzzle | null> {
     }
 
     console.error("Failed to generate a puzzle after multiple retries.");
-    return null; // Failed to generate a puzzle
+    return null;
 }
 
 

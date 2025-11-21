@@ -16,7 +16,22 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     if (pokemon.isLegendary) criteria.add('Legendary');
     if (pokemon.isMythical) criteria.add('Mythical');
     if (pokemon.region) criteria.add(pokemon.region);
+
+    // Abilities
     if (pokemon.abilities.includes('sturdy')) criteria.add('Has: Sturdy');
+    if (pokemon.abilities.includes('swift-swim')) criteria.add('Has: Swift Swim');
+    if (pokemon.abilities.includes('cursed-body')) criteria.add('Has: Cursed Body');
+    if (pokemon.abilities.includes('mold-breaker')) criteria.add('Has: Mold Breaker');
+    
+    // Moves
+    if (pokemon.moves.includes('brick-break')) criteria.add('Knows: Brick Break');
+    if (pokemon.moves.includes('grass-knot')) criteria.add('Knows: Grass Knot');
+    if (pokemon.moves.includes('iron-tail')) criteria.add('Knows: Iron Tail');
+    if (pokemon.moves.includes('cut')) criteria.add('Knows: Cut');
+    if (pokemon.moves.includes('flamethrower')) criteria.add('Knows: Flame Thrower');
+    if (pokemon.moves.includes('leer')) criteria.add('Knows: Leer');
+    if (pokemon.moves.includes('mud-slap')) criteria.add('Knows: Mud Slap');
+
     if (pokemon.canEvolve) criteria.add('Can Evolve');
     if (pokemon.isFinalEvolution) criteria.add('Final Evolution');
     if (pokemon.isPartner) criteria.add('Partner Pokemon');

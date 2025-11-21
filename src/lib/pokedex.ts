@@ -4,6 +4,7 @@ import { unstable_cache } from 'next/cache';
 
 const POKEAPI_URL = 'https://pokeapi.co/api/v2';
 const POKEMON_COUNT = 1025; // Up to Gen 9
+
 const PARTNER_POKEMON = [
     'bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee',
     'chikorita', 'cyndaquil', 'totodile',
@@ -32,11 +33,16 @@ interface PokeApiAbility {
     slot: number;
 }
 
+interface PokeApiMove {
+    move: PokeApiResource;
+}
+
 interface PokeApiPokemon {
   id: number;
   name:string;
   types: PokeApiType[];
   abilities: PokeApiAbility[];
+  moves: PokeApiMove[];
   species: PokeApiResource;
 }
 
@@ -166,6 +172,7 @@ export const getAllPokemonWithDetails = unstable_cache(
             isMega,
             region,
             abilities: pokemonData.abilities.map(a => a.ability.name),
+            moves: pokemonData.moves.map(m => m.move.name),
             canEvolve,
             isFinalEvolution,
             isPartner: PARTNER_POKEMON.includes(pokemonData.name),
@@ -185,6 +192,6 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen9-mythical'],
+  ['all-pokemon-with-details-gen9-moves-abilities'],
   { revalidate: 3600 * 24 } // Revalidate once a day
 );

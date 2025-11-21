@@ -6,6 +6,7 @@ export interface Pokemon {
   isMega: boolean;
   region: string;
   abilities: string[];
+  moves: string[];
   canEvolve: boolean;
   isFinalEvolution: boolean;
   isPartner: boolean;
