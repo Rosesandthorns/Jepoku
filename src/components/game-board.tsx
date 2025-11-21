@@ -8,7 +8,6 @@ import { Check, Send, Trophy, X, HelpCircle } from 'lucide-react';
 
 import type { Puzzle, ValidationResult } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
@@ -80,16 +79,6 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
     }
   }, [state.isCorrect, puzzleId, score]);
 
-  const getInputClass = (isCorrect: boolean | null) => {
-    if (isCorrect === true) {
-      return 'border-green-500 ring-green-500 focus-visible:ring-green-500';
-    }
-    if (isCorrect === false) {
-      return 'border-red-500 ring-red-500 focus-visible:ring-red-500';
-    }
-    return '';
-  };
-  
   const getSelectClass = (isCorrect: boolean | null) => {
     if (isCorrect === true) {
       return 'border-green-500 ring-green-500 focus:ring-green-500';
@@ -148,13 +137,18 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
               <div className="grid grid-rows-3 gap-2 sm:gap-4">
                 {[0, 1, 2].map((i) => (
                   <div key={`row-input-${i}`} className="relative flex items-center h-full">
-                    <Input
-                      name={`row-${i}`}
-                      aria-label={`Row ${i + 1} guess`}
-                      placeholder={`Row ${i + 1}`}
-                      className={cn('w-24 font-semibold', getInputClass(state.rowResults[i]))}
-                      disabled={state.isCorrect}
-                    />
+                    <Select name={`row-${i}`} disabled={state.isCorrect}>
+                      <SelectTrigger className={cn('w-28 font-semibold', getSelectClass(state.rowResults[i]))}>
+                        <SelectValue placeholder={`Row ${i + 1}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ALL_CRITERIA.map((crit) => (
+                          <SelectItem key={crit} value={crit}>
+                            {crit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                      {state.rowResults[i] === true && <Check className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />}
                      {state.rowResults[i] === false && <X className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />}
                   </div>
