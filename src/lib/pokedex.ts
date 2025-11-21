@@ -3,16 +3,12 @@ import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
 
 const POKEAPI_URL = 'https://pokeapi.co/api/v2';
-const POKEMON_COUNT = 1025; // As of Gen 9
+const POKEMON_COUNT = 151; // Kanto Pokemon
+const PARTNER_POKEMON = ['bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee'];
 
 interface PokeApiResource {
   name: string;
   url: string;
-}
-
-interface PokeApiName {
-  language: PokeApiResource;
-  name: string;
 }
 
 interface PokeApiType {
@@ -20,10 +16,47 @@ interface PokeApiType {
   type: PokeApiResource;
 }
 
+interface PokeApiAbility {
+    ability: PokeApiResource;
+    is_hidden: boolean;
+    slot: number;
+}
+
 interface PokeApiPokemon {
   id: number;
   name:string;
   types: PokeApiType[];
+  abilities: PokeApiAbility[];
+  species: PokeApiResource;
+}
+
+interface PokeApiSpecies {
+    id: number;
+    name: string;
+    evolution_chain: { url: string; };
+    evolves_from_species: PokeApiResource | null;
+}
+
+interface PokeApiEvolutionChain {
+    id: number;
+    chain: {
+        species: PokeApiResource;
+        evolves_to: {
+            species: PokeApiResource;
+            evolves_to: {
+                species: PokeApiResource;
+                evolves_to: any[];
+            }[];
+        }[];
+    };
+}
+
+interface PokeApiVariety {
+    is_default: boolean;
+    pokemon: PokeApiResource;
+}
+interface PokeApiPokemonSpecies {
+    varieties: PokeApiVariety[];
 }
 
 export const getPokemonTypes = unstable_cache(
@@ -45,7 +78,18 @@ export const getPokemonTypes = unstable_cache(
   { revalidate: 3600 * 24 } // Revalidate once a day
 );
 
-export const getAllPokemonWithTypes = unstable_cache(
+async function hasMegaEvolution(pokemonName: string): Promise<boolean> {
+    try {
+        const speciesRes = await fetch(`${POKEAPI_URL}/pokemon-species/${pokemonName}`);
+        if (!speciesRes.ok) return false;
+        const speciesData: PokeApiPokemonSpecies = await speciesRes.json();
+        return speciesData.varieties.some(v => !v.is_default && v.pokemon.name.includes('-mega'));
+    } catch {
+        return false;
+    }
+}
+
+export const getAllPokemonWithDetails = unstable_cache(
   async (): Promise<Pokemon[]> => {
     try {
       const response = await fetch(`${POKEAPI_URL}/pokemon?limit=${POKEMON_COUNT}`);
@@ -58,24 +102,60 @@ export const getAllPokemonWithTypes = unstable_cache(
           if (!pokemonRes.ok) return null;
           const pokemonData: PokeApiPokemon = await pokemonRes.json();
           
+          const speciesRes = await fetch(pokemonData.species.url);
+          if (!speciesRes.ok) return null;
+          const speciesData: PokeApiSpecies = await speciesRes.json();
+
+          const evolutionChainRes = await fetch(speciesData.evolution_chain.url);
+          if (!evolutionChainRes.ok) return null;
+          const evolutionChainData: PokeApiEvolutionChain = await evolutionChainRes.json();
+
+          let canEvolve = false;
+          let isFinalEvolution = false;
+
+          const findInChain = (chain: any): any => {
+              if (chain.species.name === pokemonData.name) return chain;
+              for(const evo of chain.evolves_to) {
+                  const found = findInChain(evo);
+                  if (found) return found;
+              }
+              return null;
+          }
+
+          const evolutionNode = findInChain(evolutionChainData.chain);
+          
+          if (evolutionNode) {
+              canEvolve = evolutionNode.evolves_to.length > 0;
+              isFinalEvolution = evolutionNode.evolves_to.length === 0 && !!speciesData.evolves_from_species;
+          }
+
+          const isMega = await hasMegaEvolution(pokemonData.name);
+
           return {
             id: pokemonData.id,
             name: pokemonData.name,
             types: pokemonData.types.map(t => t.type.name),
             spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonData.id}.png`,
+            isMega,
+            region: 'Kanto',
+            abilities: pokemonData.abilities.map(a => a.ability.name),
+            canEvolve,
+            isFinalEvolution,
+            isPartner: PARTNER_POKEMON.includes(pokemonData.name),
           };
-        } catch {
+        } catch (e) {
+          console.error(`Failed to process ${p.name}`, e)
           return null;
         }
       });
 
-      const allPokemon = (await Promise.all(pokemonPromises)).filter((p): p is Pokemon => p !== null && p.types.length > 0);
+      const allPokemon = (await Promise.all(pokemonPromises)).filter((p): p is Pokemon => p !== null);
       return allPokemon;
     } catch (error) {
       console.error("Error fetching all Pokemon details:", error);
       return [];
     }
   },
-  ['all-pokemon-with-types'],
+  ['all-pokemon-with-details'],
   { revalidate: 3600 * 24 } // Revalidate once a day
 );

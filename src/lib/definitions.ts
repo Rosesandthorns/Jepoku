@@ -3,6 +3,12 @@ export interface Pokemon {
   name: string;
   types: string[];
   spriteUrl: string;
+  isMega: boolean;
+  region: 'Kanto';
+  abilities: string[];
+  canEvolve: boolean;
+  isFinalEvolution: boolean;
+  isPartner: boolean;
 }
 
 export interface Puzzle {

@@ -2,7 +2,7 @@ import { GameBoard } from '@/components/game-board';
 import { generatePuzzle } from '@/lib/puzzle-generator';
 import type { ValidationResult } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Lightbulb } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import {
   Card,
   CardContent,
