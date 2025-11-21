@@ -22,6 +22,8 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     if (pokemon.isMega) criteria.add('Mega');
     if (pokemon.isLegendary) criteria.add('Legendary');
     if (pokemon.isMythical) criteria.add('Mythical');
+    if (pokemon.isUltraBeast) criteria.add('Ultra Beast');
+    if (pokemon.isParadox) criteria.add('Paradox');
     if (pokemon.region) criteria.add(pokemon.region);
 
     // Abilities
@@ -50,15 +52,12 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     if (pokemon.moves.includes('flamethrower')) criteria.add('Knows: Flame Thrower');
     if (pokemon.moves.includes('leer')) criteria.add('Knows: Leer');
     if (pokemon.moves.includes('mud-slap')) criteria.add('Knows: Mud Slap');
-    if (pokemon.moves.includes('sleep-talk')) criteria.add('Learns Sleep Talk');
     if (pokemon.moves.includes('earthquake')) criteria.add('Learns Earthquake');
     if (pokemon.moves.includes('bind')) criteria.add('Learns Bind');
     if (pokemon.moves.includes('close-combat')) criteria.add('Learns Close Combat');
     if (pokemon.moves.includes('dazzling-gleam')) criteria.add('Learns Dazzling Gleam');
     if (pokemon.moves.includes('dark-pulse')) criteria.add('Learns Dark Pulse');
-    if (pokemon.moves.includes('hyper-beam')) criteria.add('Learns Hyper Beam');
     if (pokemon.moves.includes('heal-pulse')) criteria.add('Learns Heal Pulse');
-    if (pokemon.moves.includes('toxic')) criteria.add('Learns Toxic');
     if (pokemon.moves.includes('scratch')) criteria.add('Learns Scratch');
     if (pokemon.moves.includes('wish')) criteria.add('Learns Wish');
     if (pokemon.moves.includes('healing-wish')) criteria.add('Learns Healing Wish');

@@ -181,6 +181,9 @@ export const getAllPokemonWithDetails = unstable_cache(
               }
           });
 
+          const abilities = pokemonData.abilities.map(a => a.ability.name);
+          const isUltraBeast = abilities.includes('beast-boost');
+          const isParadox = abilities.includes('protosynthesis') || abilities.includes('quark-drive');
 
           return {
             id: pokemonData.id,
@@ -189,13 +192,15 @@ export const getAllPokemonWithDetails = unstable_cache(
             spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonData.id}.png`,
             isMega,
             region,
-            abilities: pokemonData.abilities.map(a => a.ability.name),
+            abilities,
             moves: pokemonData.moves.map(m => m.move.name),
             canEvolve,
             isFinalEvolution,
             isPartner: PARTNER_POKEMON.includes(pokemonData.name),
             isLegendary: speciesData.is_legendary,
             isMythical: speciesData.is_mythical,
+            isUltraBeast,
+            isParadox,
             stats,
           };
         } catch (e) {

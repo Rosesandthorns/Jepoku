@@ -12,6 +12,8 @@ export interface Pokemon {
   isPartner: boolean;
   isLegendary: boolean;
   isMythical: boolean;
+  isUltraBeast: boolean;
+  isParadox: boolean;
   stats: {
     hp: number;
     attack: number;

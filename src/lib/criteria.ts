@@ -21,6 +21,8 @@ export const NORMAL_CRITERIA = [
   'Mega',
   'Legendary',
   'Mythical',
+  'Ultra Beast',
+  'Paradox',
   'Kanto',
   'Johto',
   'Hoenn',

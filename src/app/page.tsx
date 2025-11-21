@@ -20,6 +20,8 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     if (pokemon.isMega) criteria.add('Mega');
     if (pokemon.isLegendary) criteria.add('Legendary');
     if (pokemon.isMythical) criteria.add('Mythical');
+    if (pokemon.isUltraBeast) criteria.add('Ultra Beast');
+    if (pokemon.isParadox) criteria.add('Paradox');
     if (pokemon.region) criteria.add(pokemon.region);
 
     // Abilities
@@ -154,6 +156,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
   const isHardMode = mode === 'hard';
 
   const boundGetPuzzleAction = getNewPuzzle.bind(null, mode);
+  const boundCheckAnswersAction = checkAnswers.bind(null);
 
   return (
     <main className={cn("flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-8 transition-colors duration-500", isHardMode ? "bg-red-950/20" : "")}>
