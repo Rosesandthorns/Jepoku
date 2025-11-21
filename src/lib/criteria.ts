@@ -19,6 +19,7 @@ export const ALL_CRITERIA = [
   'Dark',
   'Mega',
   'Kanto',
+  'Johto',
   'Has: Sturdy',
   'Can Evolve',
   'Final Evolution',

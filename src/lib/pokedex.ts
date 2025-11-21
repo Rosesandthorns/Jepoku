@@ -3,8 +3,11 @@ import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
 
 const POKEAPI_URL = 'https://pokeapi.co/api/v2';
-const POKEMON_COUNT = 151; // Kanto Pokemon
-const PARTNER_POKEMON = ['bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee'];
+const POKEMON_COUNT = 251; // Kanto + Johto Pokemon
+const PARTNER_POKEMON = [
+    'bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee',
+    'chikorita', 'cyndaquil', 'totodile'
+];
 
 interface PokeApiResource {
   name: string;
@@ -35,6 +38,7 @@ interface PokeApiSpecies {
     name: string;
     evolution_chain: { url: string; };
     evolves_from_species: PokeApiResource | null;
+    generation: PokeApiResource;
 }
 
 interface PokeApiEvolutionChain {
@@ -57,6 +61,11 @@ interface PokeApiVariety {
 }
 interface PokeApiPokemonSpecies {
     varieties: PokeApiVariety[];
+}
+
+const generationToRegion: { [key: string]: string } = {
+    'generation-i': 'Kanto',
+    'generation-ii': 'Johto',
 }
 
 export const getPokemonTypes = unstable_cache(
@@ -130,6 +139,8 @@ export const getAllPokemonWithDetails = unstable_cache(
           }
 
           const isMega = await hasMegaEvolution(pokemonData.name);
+          const region = generationToRegion[speciesData.generation.name] || 'Unknown';
+
 
           return {
             id: pokemonData.id,
@@ -137,7 +148,7 @@ export const getAllPokemonWithDetails = unstable_cache(
             types: pokemonData.types.map(t => t.type.name),
             spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonData.id}.png`,
             isMega,
-            region: 'Kanto',
+            region,
             abilities: pokemonData.abilities.map(a => a.ability.name),
             canEvolve,
             isFinalEvolution,
@@ -156,6 +167,6 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details'],
+  ['all-pokemon-with-details-gen2'],
   { revalidate: 3600 * 24 } // Revalidate once a day
 );

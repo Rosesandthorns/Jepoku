@@ -4,7 +4,7 @@ export interface Pokemon {
   types: string[];
   spriteUrl: string;
   isMega: boolean;
-  region: 'Kanto';
+  region: string;
   abilities: string[];
   canEvolve: boolean;
   isFinalEvolution: boolean;

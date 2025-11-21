@@ -19,6 +19,7 @@ function shuffle<T>(array: T[]): T[] {
 function checkPokemon(pokemon: Pokemon, criterion: Criterion): boolean {
     if (criterion === 'Mega') return pokemon.isMega;
     if (criterion === 'Kanto') return pokemon.region === 'Kanto';
+    if (criterion === 'Johto') return pokemon.region === 'Johto';
     if (criterion === 'Has: Sturdy') return pokemon.abilities.includes('sturdy');
     if (criterion === 'Can Evolve') return pokemon.canEvolve;
     if (criterion === 'Final Evolution') return pokemon.isFinalEvolution;
@@ -33,6 +34,7 @@ async function getCriteria(): Promise<Criterion[]> {
         ...types,
         'Mega',
         'Kanto',
+        'Johto',
         'Has: Sturdy',
         'Can Evolve',
         'Final Evolution',
