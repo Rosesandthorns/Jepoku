@@ -30,14 +30,23 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
 
 async function createValidPuzzle(): Promise<Puzzle | null> {
     const allPokemon = await getAllPokemonWithDetails();
-    const shuffledPokemon = shuffle(allPokemon);
+    if (!allPokemon.length) {
+        console.error("No Pokemon data available.");
+        return null;
+    }
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
         const shuffledCriteria = shuffle([...ALL_CRITERIA]);
-        if (shuffledCriteria.length < GRID_SIZE * 2) return null; // Not enough criteria to choose from
+        if (shuffledCriteria.length < GRID_SIZE * 2) return null;
 
         const rowAnswers = shuffledCriteria.slice(0, GRID_SIZE);
         const colAnswers = shuffledCriteria.slice(GRID_SIZE, GRID_SIZE * 2);
+
+        // Ensure all 6 criteria are unique
+        const allAnswers = new Set([...rowAnswers, ...colAnswers]);
+        if (allAnswers.size !== GRID_SIZE * 2) {
+            continue; // Try next attempt if criteria are not unique
+        }
 
         const grid: (Pokemon | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
         const usedPokemonIds = new Set<number>();
@@ -48,15 +57,19 @@ async function createValidPuzzle(): Promise<Puzzle | null> {
                 const rowCriterion = rowAnswers[r];
                 const colCriterion = colAnswers[c];
 
-                const candidate = shuffledPokemon.find(p => {
+                // Find all valid candidates for the current cell
+                const candidates = allPokemon.filter(p => {
                     if (usedPokemonIds.has(p.id)) return false;
                     const pCriteria = getPokemonCriteria(p);
                     return pCriteria.has(rowCriterion) && pCriteria.has(colCriterion);
                 });
 
-                if (candidate) {
-                    grid[r][c] = candidate;
-                    usedPokemonIds.add(candidate.id);
+                if (candidates.length > 0) {
+                    // Shuffle the valid candidates and pick the first one
+                    const shuffledCandidates = shuffle(candidates);
+                    const chosenPokemon = shuffledCandidates[0];
+                    grid[r][c] = chosenPokemon;
+                    usedPokemonIds.add(chosenPokemon.id);
                 } else {
                     success = false;
                     break;
@@ -74,19 +87,11 @@ async function createValidPuzzle(): Promise<Puzzle | null> {
         }
     }
 
+    console.error("Failed to generate a puzzle after multiple retries.");
     return null; // Failed to generate a puzzle
 }
 
 
 export async function generatePuzzle(): Promise<Puzzle | null> {
-    const puzzle = await createValidPuzzle();
-
-    if (puzzle) {
-        return puzzle;
-    }
-    
-    // Fallback if the strict generator fails, which should be rare.
-    // This part of the code should ideally not be reached.
-    console.error("Failed to generate a puzzle after multiple retries.");
-    return null;
+    return createValidPuzzle();
 }
