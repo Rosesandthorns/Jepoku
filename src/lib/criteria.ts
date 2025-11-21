@@ -1,3 +1,4 @@
+
 export const NORMAL_CRITERIA = [
   'Normal',
   'Fire',
@@ -59,7 +60,6 @@ export const HARD_CRITERIA = [
   'Below 50 sp def',
   'Below 50 def',
   'Below 50 speed',
-  'Learns Sleep Talk',
   'Learns Grass Knot',
   'Learns Brick Break',
   'Learns Earthquake',
@@ -68,9 +68,7 @@ export const HARD_CRITERIA = [
   'Learns Close Combat',
   'Learns Dazzling Gleam',
   'Learns Dark Pulse',
-  'Learns Hyper Beam',
   'Learns Heal Pulse',
-  'Learns Toxic',
   'Learns Scratch',
   'Learns Wish',
   'Learns Healing Wish',

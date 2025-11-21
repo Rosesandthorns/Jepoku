@@ -159,7 +159,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
   const boundGetPuzzleAction = getNewPuzzle.bind(null, mode);
 
   return (
-    <main className={cn("flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-8 transition-colors duration-500", isHardMode && "bg-red-950/20")}>
+    <main className={cn("flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-8 transition-colors duration-500", isHardMode ? "bg-red-950/20" : "")}>
       <div className="w-full max-w-4xl">
         <header className="mb-6 text-center">
           <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
