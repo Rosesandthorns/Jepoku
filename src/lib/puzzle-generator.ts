@@ -2,7 +2,7 @@ import 'server-only';
 import { getAllPokemonWithTypes, getPokemonTypes } from './pokedex';
 import type { Puzzle, Pokemon } from './definitions';
 
-const MAX_RETRIES = 20;
+const MAX_RETRIES = 50; // Increased retries just in case
 
 function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length, randomIndex;
@@ -24,8 +24,11 @@ export async function generatePuzzle(): Promise<Puzzle | null> {
       if (allTypes.length < 6) throw new Error("Not enough Pokemon types available.");
 
       const shuffledTypes = shuffle([...allTypes]);
-      const rowAnswers = shuffledTypes.slice(0, 3);
-      const colAnswers = shuffledTypes.slice(3, 6);
+      
+      // Ensure row and column types are distinct from each other initially
+      const selectedTypes = shuffledTypes.slice(0, 6);
+      const rowAnswers = selectedTypes.slice(0, 3);
+      const colAnswers = selectedTypes.slice(3, 6);
 
       const grid: (Pokemon | null)[][] = Array(3).fill(null).map(() => Array(3).fill(null));
       const usedPokemonIds = new Set<number>();
