@@ -54,8 +54,7 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
 }
 
 export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode }) => {
-  const boundAction = useMemo(() => checkAnswersAction.bind(null, puzzle), [checkAnswersAction, puzzle]);
-  const [state, formAction] = useActionState(boundAction, initialValidationState);
+  const [state, formAction] = useActionState(checkAnswersAction, initialValidationState);
 
   const [score, setScore] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
