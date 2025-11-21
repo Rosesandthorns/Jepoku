@@ -3,7 +3,7 @@ import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
 
 const POKEAPI_URL = 'https://pokeapi.co/api/v2';
-const POKEMON_COUNT = 809; // Kanto, Johto, Hoenn, Sinnoh, Unova, Kalos, Alola (up to Melmetal)
+const POKEMON_COUNT = 1025; // Up to Gen 9
 const PARTNER_POKEMON = [
     'bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee',
     'chikorita', 'cyndaquil', 'totodile',
@@ -11,7 +11,9 @@ const PARTNER_POKEMON = [
     'turtwig', 'chimchar', 'piplup',
     'snivy', 'tepig', 'oshawott',
     'chespin', 'fennekin', 'froakie',
-    'rowlet', 'litten', 'popplio'
+    'rowlet', 'litten', 'popplio',
+    'grookey', 'scorbunny', 'sobble',
+    'sprigatito', 'fuecoco', 'quaxly'
 ];
 
 interface PokeApiResource {
@@ -45,6 +47,7 @@ interface PokeApiSpecies {
     evolves_from_species: PokeApiResource | null;
     generation: PokeApiResource;
     is_legendary: boolean;
+    is_mythical: boolean;
 }
 
 interface PokeApiEvolutionChain {
@@ -77,6 +80,8 @@ const generationToRegion: { [key: string]: string } = {
     'generation-v': 'Unova',
     'generation-vi': 'Kalos',
     'generation-vii': 'Alola',
+    'generation-viii': 'Galar',
+    'generation-ix': 'Paldea',
 }
 
 export const getPokemonTypes = unstable_cache(
@@ -165,6 +170,7 @@ export const getAllPokemonWithDetails = unstable_cache(
             isFinalEvolution,
             isPartner: PARTNER_POKEMON.includes(pokemonData.name),
             isLegendary: speciesData.is_legendary,
+            isMythical: speciesData.is_mythical,
           };
         } catch (e) {
           console.error(`Failed to process ${p.name}`, e)
@@ -179,6 +185,6 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen7-legendary'],
+  ['all-pokemon-with-details-gen9-mythical'],
   { revalidate: 3600 * 24 } // Revalidate once a day
 );

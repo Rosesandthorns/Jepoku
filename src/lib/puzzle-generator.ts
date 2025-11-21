@@ -20,6 +20,7 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     const criteria = new Set<string>(pokemon.types.map(t => t.charAt(0).toUpperCase() + t.slice(1)));
     if (pokemon.isMega) criteria.add('Mega');
     if (pokemon.isLegendary) criteria.add('Legendary');
+    if (pokemon.isMythical) criteria.add('Mythical');
     if (pokemon.region) criteria.add(pokemon.region);
     if (pokemon.abilities.includes('sturdy')) criteria.add('Has: Sturdy');
     if (pokemon.canEvolve) criteria.add('Can Evolve');
