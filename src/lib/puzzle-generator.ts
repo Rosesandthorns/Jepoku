@@ -1,8 +1,9 @@
 import 'server-only';
 import { getAllPokemonWithDetails, getPokemonTypes } from './pokedex';
 import type { Puzzle, Pokemon } from './definitions';
+import { ALL_CRITERIA } from './criteria';
 
-const MAX_RETRIES = 50;
+const MAX_RETRIES = 100;
 
 type Criterion = string;
 
@@ -30,8 +31,7 @@ function checkPokemon(pokemon: Pokemon, criterion: Criterion): boolean {
 
 async function getCriteria(): Promise<Criterion[]> {
     const types = await getPokemonTypes();
-    return [
-        ...types,
+    const specialCriteria = [
         'Mega',
         'Kanto',
         'Johto',
@@ -40,95 +40,72 @@ async function getCriteria(): Promise<Criterion[]> {
         'Final Evolution',
         'Partner Pokemon'
     ];
+    return [...types, ...specialCriteria];
 }
 
 export async function generatePuzzle(): Promise<Puzzle | null> {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const allPokemon = await getAllPokemonWithDetails();
-    if (allPokemon.length === 0) {
-      console.error("No Pokemon data available on attempt", attempt);
-      continue;
-    }
-
-    const availableCriteria = await getCriteria();
-    let criteriaPool = shuffle([...availableCriteria]);
-    
-    const grid: (Pokemon | null)[][] = Array(3).fill(null).map(() => Array(3).fill(null));
-    const usedPokemonIds = new Set<number>();
-    const usedCriteria = new Set<Criterion>();
-    
-    const rowAnswers: (Criterion | '')[] = ['', '', ''];
-    const colAnswers: (Criterion | '')[] = ['', '', ''];
-
     try {
-      // 1. Choose top-left column criterion and mon
-      colAnswers[0] = criteriaPool.pop()!;
-      usedCriteria.add(colAnswers[0]);
-      
-      const mon00Candidates = allPokemon.filter(p => checkPokemon(p, colAnswers[0]));
-      if (mon00Candidates.length === 0) continue;
-      const mon00 = shuffle(mon00Candidates)[0];
-      grid[0][0] = mon00;
-      usedPokemonIds.add(mon00.id);
+      const allPokemon = await getAllPokemonWithDetails();
+      if (allPokemon.length === 0) {
+        console.error("No Pokemon data available on attempt", attempt);
+        continue;
+      }
+      const shuffledPokemon = shuffle(allPokemon);
 
-      // 2. Determine top-left row criterion
-      const row0Candidates = criteriaPool.filter(c => checkPokemon(mon00, c) && c !== colAnswers[0]);
-      if (row0Candidates.length === 0) continue;
-      rowAnswers[0] = shuffle(row0Candidates)[0];
-      usedCriteria.add(rowAnswers[0]);
-      criteriaPool = criteriaPool.filter(c => !usedCriteria.has(c));
-      
-      // 3. Fill top row and determine column criteria
-      for (let c = 1; c < 3; c++) {
-          const monCandidates = allPokemon.filter(p => !usedPokemonIds.has(p.id) && checkPokemon(p, rowAnswers[0]));
-          if(monCandidates.length === 0) throw new Error();
-          const chosenMon = shuffle(monCandidates)[0];
-          grid[0][c] = chosenMon;
-          usedPokemonIds.add(chosenMon.id);
+      const availableCriteria = shuffle([...ALL_CRITERIA]);
+
+      // 1. Select 6 unique criteria
+      if (availableCriteria.length < 6) throw new Error("Not enough criteria");
+      const chosenCriteria = availableCriteria.slice(0, 6);
+      const rowAnswers = chosenCriteria.slice(0, 3) as string[];
+      const colAnswers = chosenCriteria.slice(3, 6) as string[];
+
+      const grid: (Pokemon | null)[][] = Array(3).fill(null).map(() => Array(3).fill(null));
+      const usedPokemonIds = new Set<number>();
+
+      // 2. Fill the grid
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          // Randomly decide if the pokemon should be Gen 1 or Gen 2 for this tile
+          const targetGeneration = Math.random() < 0.5 ? 'Kanto' : 'Johto';
           
-          const colCriteriaCandidates = criteriaPool.filter(crit => checkPokemon(chosenMon, crit));
-          if(colCriteriaCandidates.length === 0) throw new Error();
-          const chosenColCrit = shuffle(colCriteriaCandidates)[0];
-          colAnswers[c] = chosenColCrit;
-          usedCriteria.add(chosenColCrit);
-          criteriaPool = criteriaPool.filter(crit => !usedCriteria.has(crit));
-      }
+          const candidates = shuffledPokemon.filter(p =>
+            !usedPokemonIds.has(p.id) &&
+            checkPokemon(p, rowAnswers[r]) &&
+            checkPokemon(p, colAnswers[c]) &&
+            p.region === targetGeneration
+          );
 
-      // 4. Fill rest of left-most column and determine row criteria
-      for (let r = 1; r < 3; r++) {
-          const monCandidates = allPokemon.filter(p => !usedPokemonIds.has(p.id) && checkPokemon(p, colAnswers[0]));
-           if(monCandidates.length === 0) throw new Error();
-          const chosenMon = shuffle(monCandidates)[0];
-          grid[r][0] = chosenMon;
-          usedPokemonIds.add(chosenMon.id);
-
-          const rowCriteriaCandidates = criteriaPool.filter(crit => checkPokemon(chosenMon, crit));
-          if(rowCriteriaCandidates.length === 0) throw new Error();
-          const chosenRowCrit = shuffle(rowCriteriaCandidates)[0];
-          rowAnswers[r] = chosenRowCrit;
-          usedCriteria.add(chosenRowCrit);
-          criteriaPool = criteriaPool.filter(crit => !usedCriteria.has(crit));
-      }
-
-      // 5. Fill remaining 4 tiles
-      for (let r = 1; r < 3; r++) {
-          for (let c = 1; c < 3; c++) {
-              const monCandidates = allPokemon.filter(p =>
-                  !usedPokemonIds.has(p.id) &&
-                  checkPokemon(p, rowAnswers[r]) &&
-                  checkPokemon(p, colAnswers[c])
-              );
-              if (monCandidates.length === 0) throw new Error();
-              const chosenMon = shuffle(monCandidates)[0];
+          if (candidates.length === 0) {
+             // If no candidate for the specific gen, try the other gen
+             const fallbackGeneration = targetGeneration === 'Kanto' ? 'Johto' : 'Kanto';
+             const fallbackCandidates = shuffledPokemon.filter(p =>
+                !usedPokemonIds.has(p.id) &&
+                checkPokemon(p, rowAnswers[r]) &&
+                checkPokemon(p, colAnswers[c]) &&
+                p.region === fallbackGeneration
+             );
+              if (fallbackCandidates.length === 0) {
+                // If still no candidates, this puzzle is impossible
+                throw new Error(`No Pokemon found for row "${rowAnswers[r]}", col "${colAnswers[c]}"`);
+              }
+              const chosenMon = fallbackCandidates[0];
               grid[r][c] = chosenMon;
               usedPokemonIds.add(chosenMon.id);
+
+          } else {
+            const chosenMon = candidates[0];
+            grid[r][c] = chosenMon;
+            usedPokemonIds.add(chosenMon.id);
           }
+        }
       }
 
-      return { grid, rowAnswers: rowAnswers as string[], colAnswers: colAnswers as string[] };
-
+      return { grid, rowAnswers, colAnswers };
     } catch (e) {
-      // This attempt failed, loop will try again
+      // This attempt failed, the loop will try again.
+      // console.log(`Attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e);
     }
   }
 
