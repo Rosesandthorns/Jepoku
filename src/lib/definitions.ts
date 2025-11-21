@@ -9,6 +9,7 @@ export interface Pokemon {
   canEvolve: boolean;
   isFinalEvolution: boolean;
   isPartner: boolean;
+  isLegendary: boolean;
 }
 
 export interface Puzzle {

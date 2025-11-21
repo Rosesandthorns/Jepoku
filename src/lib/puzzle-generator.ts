@@ -19,8 +19,8 @@ function shuffle<T>(array: T[]): T[] {
 function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     const criteria = new Set<string>(pokemon.types.map(t => t.charAt(0).toUpperCase() + t.slice(1)));
     if (pokemon.isMega) criteria.add('Mega');
-    if (pokemon.region === 'Kanto') criteria.add('Kanto');
-    if (pokemon.region === 'Johto') criteria.add('Johto');
+    if (pokemon.isLegendary) criteria.add('Legendary');
+    if (pokemon.region) criteria.add(pokemon.region);
     if (pokemon.abilities.includes('sturdy')) criteria.add('Has: Sturdy');
     if (pokemon.canEvolve) criteria.add('Can Evolve');
     if (pokemon.isFinalEvolution) criteria.add('Final Evolution');
@@ -34,6 +34,8 @@ async function createValidPuzzle(): Promise<Puzzle | null> {
         console.error("No Pokemon data available.");
         return null;
     }
+
+    const shuffledPokemon = shuffle(allPokemon);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
         const shuffledCriteria = shuffle([...ALL_CRITERIA]);
@@ -57,17 +59,15 @@ async function createValidPuzzle(): Promise<Puzzle | null> {
                 const rowCriterion = rowAnswers[r];
                 const colCriterion = colAnswers[c];
 
-                // Find all valid candidates for the current cell
-                const candidates = allPokemon.filter(p => {
+                const candidates = shuffledPokemon.filter(p => {
                     if (usedPokemonIds.has(p.id)) return false;
                     const pCriteria = getPokemonCriteria(p);
                     return pCriteria.has(rowCriterion) && pCriteria.has(colCriterion);
                 });
 
                 if (candidates.length > 0) {
-                    // Shuffle the valid candidates and pick the first one
-                    const shuffledCandidates = shuffle(candidates);
-                    const chosenPokemon = shuffledCandidates[0];
+                    // Pick the first available candidate from the shuffled list
+                    const chosenPokemon = candidates[0];
                     grid[r][c] = chosenPokemon;
                     usedPokemonIds.add(chosenPokemon.id);
                 } else {
