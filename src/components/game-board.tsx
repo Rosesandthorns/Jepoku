@@ -34,7 +34,7 @@ const initialValidationState: ValidationResult = {
 interface GameBoardProps {
   puzzle: Puzzle;
   checkAnswersAction: (
-    state: ValidationResult,
+    prevState: ValidationResult,
     payload: FormData
   ) => Promise<ValidationResult>;
 }

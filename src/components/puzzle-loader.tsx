@@ -16,6 +16,7 @@ import {
 interface PuzzleLoaderProps {
   getPuzzleAction: () => Promise<Puzzle | null>;
   checkAnswersAction: (
+    puzzle: Puzzle,
     state: ValidationResult,
     payload: FormData
   ) => Promise<ValidationResult>;
@@ -26,7 +27,6 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction }: PuzzleLoad
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    // We start with a puzzle of null, so this effect will run on mount.
     if (!puzzle) {
       const getPuzzle = () => {
         startTransition(async () => {
@@ -37,25 +37,20 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction }: PuzzleLoad
         });
       };
       
-      // Initial attempt
       getPuzzle();
 
-      // Set up interval for retries if the initial attempt fails
       const interval = setInterval(() => {
-        // We need to check inside the interval if the puzzle has been found
-        // to know if we should clear the interval.
         setPuzzle(currentPuzzle => {
             if (currentPuzzle) {
                 clearInterval(interval);
                 return currentPuzzle;
             }
-            // If puzzle is still null, and a fetch is not pending, try again.
             if (!isPending) {
                 getPuzzle();
             }
             return null;
         });
-      }, 1000); // Retry every 1 second
+      }, 1000); 
 
       return () => clearInterval(interval);
     }
@@ -80,7 +75,9 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction }: PuzzleLoad
     );
   }
 
+  const boundCheckAnswersAction = checkAnswersAction.bind(null, puzzle);
+
   return (
-    <GameBoard puzzle={puzzle} checkAnswersAction={checkAnswersAction} />
+    <GameBoard puzzle={puzzle} checkAnswersAction={boundCheckAnswersAction} />
   );
 }
