@@ -41,7 +41,7 @@ export default async function HomePage() {
   }
 
   async function checkAnswers(
-    prevState: ValidationResult | undefined,
+    prevState: ValidationResult,
     formData: FormData
   ): Promise<ValidationResult> {
     'use server';

@@ -1,8 +1,8 @@
 'use client';
 
 import type { FC } from 'react';
-import React, { useState, useEffect, useMemo } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import React, { useState, useEffect, useMemo, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { Check, Send, Trophy, X, HelpCircle } from 'lucide-react';
 
@@ -27,7 +27,7 @@ const initialValidationState: ValidationResult = {
 interface GameBoardProps {
   puzzle: Puzzle;
   checkAnswersAction: (
-    state: ValidationResult | undefined,
+    state: ValidationResult,
     payload: FormData
   ) => Promise<ValidationResult>;
 }
@@ -44,7 +44,7 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
 }
 
 export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) => {
-  const [state, formAction] = useFormState(checkAnswersAction, initialValidationState);
+  const [state, formAction] = useActionState(checkAnswersAction, initialValidationState);
   const [score, setScore] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
 
