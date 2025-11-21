@@ -54,6 +54,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
   const [state, formAction] = useActionState(checkAnswersAction, initialValidationState);
   const [score, setScore] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
+  const [showAnswers, setShowAnswers] = useState(false);
 
   const puzzleId = useMemo(() => puzzle.grid.flat().map(p => p?.id).join('-'), [puzzle]);
 
@@ -78,6 +79,26 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
       }
     }
   }, [state.isCorrect, puzzleId, score]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        setShowAnswers(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        setShowAnswers(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   const getSelectClass = (isCorrect: boolean | null) => {
     if (isCorrect === true) {
@@ -106,7 +127,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Guess the common Pokemon type for each row and column.</p>
+                    <p>Guess the common Pokemon type for each row and column. Hold TAB to see answers.</p>
                 </TooltipContent>
             </Tooltip>
           </div>
@@ -118,7 +139,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
                   <div key={`col-input-${i}`} className="relative">
                     <Select name={`col-${i}`} disabled={state.isCorrect}>
                       <SelectTrigger className={cn('font-semibold', getSelectClass(state.colResults[i]))}>
-                        <SelectValue placeholder={`Col ${i + 1}`} />
+                        <SelectValue placeholder={showAnswers ? puzzle.colAnswers[i] : `Col ${i + 1}`} />
                       </SelectTrigger>
                       <SelectContent>
                         {ALL_CRITERIA.map((crit) => (
@@ -139,7 +160,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction }) =>
                   <div key={`row-input-${i}`} className="relative flex items-center h-full">
                     <Select name={`row-${i}`} disabled={state.isCorrect}>
                       <SelectTrigger className={cn('w-28 font-semibold', getSelectClass(state.rowResults[i]))}>
-                        <SelectValue placeholder={`Row ${i + 1}`} />
+                        <SelectValue placeholder={showAnswers ? puzzle.rowAnswers[i] : `Row ${i + 1}`} />
                       </SelectTrigger>
                       <SelectContent>
                         {ALL_CRITERIA.map((crit) => (
