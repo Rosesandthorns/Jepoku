@@ -1,13 +1,25 @@
 
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
-import type { Puzzle, ValidationResult } from '@/lib/definitions';
+import type { Puzzle, ValidationResult, Pokemon } from '@/lib/definitions';
 
 export const revalidate = 0;
 
 export async function getNewPuzzle() {
   'use server';
   return generatePuzzle();
+}
+
+function getPokemonCriteria(pokemon: Pokemon): Set<string> {
+    const criteria = new Set<string>(pokemon.types.map(t => t.charAt(0).toUpperCase() + t.slice(1)));
+    if (pokemon.isMega) criteria.add('Mega');
+    if (pokemon.isLegendary) criteria.add('Legendary');
+    if (pokemon.region) criteria.add(pokemon.region);
+    if (pokemon.abilities.includes('sturdy')) criteria.add('Has: Sturdy');
+    if (pokemon.canEvolve) criteria.add('Can Evolve');
+    if (pokemon.isFinalEvolution) criteria.add('Final Evolution');
+    if (pokemon.isPartner) criteria.add('Partner Pokemon');
+    return criteria;
 }
 
 async function checkAnswers(
@@ -38,12 +50,23 @@ async function checkAnswers(
     ],
   };
 
-  const rowResults = puzzle.rowAnswers.map((answer, i) => 
-    guesses.rows[i]?.trim().toLowerCase() === answer.toLowerCase()
-  );
-  const colResults = puzzle.colAnswers.map((answer, i) =>
-    guesses.cols[i]?.trim().toLowerCase() === answer.toLowerCase()
-  );
+  const rowResults = guesses.rows.map((guess, r) => {
+    if (!guess) return false;
+    const pokemonInRow = [puzzle.grid[r][0], puzzle.grid[r][1], puzzle.grid[r][2]];
+    return pokemonInRow.every(pokemon => {
+      if (!pokemon) return false;
+      return getPokemonCriteria(pokemon).has(guess);
+    });
+  });
+
+  const colResults = guesses.cols.map((guess, c) => {
+    if (!guess) return false;
+    const pokemonInCol = [puzzle.grid[0][c], puzzle.grid[1][c], puzzle.grid[2][c]];
+    return pokemonInCol.every(pokemon => {
+      if (!pokemon) return false;
+      return getPokemonCriteria(pokemon).has(guess);
+    });
+  });
 
   const isCorrect = [...rowResults, ...colResults].every(Boolean);
 
