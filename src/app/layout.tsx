@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import type { JepokuMode } from '@/lib/definitions';
 
 export const metadata: Metadata = {
   title: 'Jepoku',
@@ -14,7 +15,7 @@ export default function RootLayout({
   params,
 }: Readonly<{
   children: ReactNode;
-  params: { mode?: string };
+  params: { mode?: JepokuMode };
 }>) {
   const mode = params?.mode;
 
@@ -28,7 +29,7 @@ export default function RootLayout({
       <body className={cn(
         "font-body antialiased transition-colors duration-500",
         mode === 'hard' ? "bg-red-950/20" : "",
-        mode === 'blinded' ? "bg-gray-900/90" : "",
+        mode === 'blinded' || mode === 'scarred' ? "bg-gray-900/90" : "",
       )}>
         {children}
         <Toaster />

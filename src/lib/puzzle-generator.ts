@@ -179,15 +179,28 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         return null;
     }
 
-    const gridSize = mode === 'blinded' ? 6 : 3;
-    const criteriaPool = mode === 'hard' ? HARD_CRITERIA : mode === 'easy' ? EASY_CRITERIA : NORMAL_CRITERIA;
+    const isBlindedLike = mode === 'blinded' || mode === 'scarred';
+    const gridSize = isBlindedLike ? 6 : 3;
+    let criteriaPool: string[];
+    switch (mode) {
+        case 'hard':
+        case 'scarred':
+            criteriaPool = HARD_CRITERIA;
+            break;
+        case 'easy':
+            criteriaPool = EASY_CRITERIA;
+            break;
+        default:
+            criteriaPool = NORMAL_CRITERIA;
+    }
+    
     const shuffledPokemon = shuffle(allPokemon);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
         let rowAnswers: string[];
         let colAnswers: string[];
 
-        if (mode === 'blinded') {
+        if (isBlindedLike) {
             const regionsCanBeInRows = Math.random() > 0.5;
             const poolWithRegions = shuffle([...criteriaPool]);
             const poolWithoutRegions = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
@@ -260,7 +273,7 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 mode
             };
 
-            if (mode === 'blinded') {
+            if (isBlindedLike) {
                 puzzle.visibleMask = generateVisibilityMask(gridSize, 3);
             }
 

@@ -133,7 +133,7 @@ async function checkAnswers(
 
     colResults = colGuesses.map((guess, c) => {
         if (!guess) return null;
-        const imposterRow = puzzle.oddOneOutCoords!.find(c => c.col === c)!.row;
+        const imposterRow = puzzle.oddOneOutCoords!.find(coord => coord.col === c)!.row;
         const validPokemon = puzzle.grid.map(row => row[c]).filter((_, r) => r !== imposterRow);
         return validPokemon.every(p => p && getPokemonCriteria(p).has(guess));
     });
@@ -200,9 +200,9 @@ export default function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className={cn(
       "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
-      mode === 'blinded' || mode === 'odd-one-out' ? "justify-start" : "justify-center",
+      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' ? "justify-start" : "justify-center",
     )}>
-      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' ? 'max-w-none' : 'max-w-7xl')}>
+      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
@@ -236,15 +236,15 @@ export default function HomePage({ searchParams }: HomePageProps) {
                     <Link href="/?mode=blinded" className={cn(mode === 'blinded' && 'font-bold')}>Blinded Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                    <Link href="/?mode=scarred" className={cn(mode === 'scarred' && 'font-bold')}>Scarred Mode</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/?mode=odd-one-out" className={cn(mode === 'odd-one-out' && 'font-bold')}>Odd one out</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
                 <DropdownMenuItem disabled>
                     Imposter
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                    Scarred Mode
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
