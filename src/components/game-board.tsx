@@ -64,7 +64,8 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
 }
 
 export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode, onSolve, onFail, isDittoTransform }) => {
-  const [state, formAction] = useActionState(checkAnswersAction, getInitialState(puzzle));
+  const [initialState] = useState(() => getInitialState(puzzle));
+  const [state, formAction] = useActionState(checkAnswersAction, initialState);
 
   const [score, setScore] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
@@ -100,26 +101,27 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
 
 
   useEffect(() => {
-    if (state.isCorrect === true) {
-      if(onSolve) {
-        // In modes like Timer or Ditto, let the parent handle solve state
-        onSolve();
-      } else {
-        // Standard score keeping
-        const lastSolved = localStorage.getItem('lastSolvedPuzzleId');
-        if (lastSolved !== puzzleId) {
-          const newScore = score + 1;
-          setScore(newScore);
-          localStorage.setItem('jepokuScore', newScore.toString());
-          localStorage.setItem('lastSolvedPuzzleId', puzzleId);
+    // Only fire callbacks if the state has changed from the initial state
+    if (state !== initialState) {
+        if (state.isCorrect === true) {
+            if (onSolve) {
+                onSolve();
+            } else {
+                const lastSolved = localStorage.getItem('lastSolvedPuzzleId');
+                if (lastSolved !== puzzleId) {
+                    const newScore = score + 1;
+                    setScore(newScore);
+                    localStorage.setItem('jepokuScore', newScore.toString());
+                    localStorage.setItem('lastSolvedPuzzleId', puzzleId);
+                }
+            }
+        } else if (state.isCorrect === false) {
+            if (onFail) {
+                onFail();
+            }
         }
-      }
-    } else if (state.isCorrect === false) {
-      if (onFail) {
-        onFail();
-      }
     }
-  }, [state.isCorrect, puzzleId, score, onSolve, onFail]);
+  }, [state, initialState, puzzleId, score, onSolve, onFail]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
