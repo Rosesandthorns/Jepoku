@@ -1,3 +1,4 @@
+
 export interface Pokemon {
   id: number;
   name: string;
@@ -24,7 +25,7 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'scarred';
 
 export interface Puzzle {
   grid: (Pokemon | null)[][];

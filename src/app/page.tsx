@@ -5,6 +5,8 @@ import { generatePuzzle } from '@/lib/puzzle-generator';
 import type { Puzzle, ValidationResult, Pokemon, JepokuMode } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Menu } from 'lucide-react';
 
 export const revalidate = 0;
 
@@ -143,7 +145,15 @@ interface HomePageProps {
 }
 
 export default function HomePage({ searchParams }: HomePageProps) {
-  const mode: JepokuMode = searchParams.mode === 'hard' ? 'hard' : (searchParams.mode === 'blinded' ? 'blinded' : 'normal');
+  const modeParam = searchParams.mode;
+  const mode: JepokuMode = 
+    modeParam === 'hard' ? 'hard' : 
+    (modeParam === 'blinded' ? 'blinded' : 
+    (modeParam === 'easy' ? 'easy' : 
+    (modeParam === 'odd-one-out' ? 'odd-one-out' : 
+    (modeParam === 'imposter' ? 'imposter' : 
+    (modeParam === 'scarred' ? 'scarred' : 'normal')))));
+
 
   return (
     <main className={cn(
@@ -151,32 +161,53 @@ export default function HomePage({ searchParams }: HomePageProps) {
       mode === 'blinded' ? "justify-start" : "justify-center",
     )}>
       <div className={cn("w-full", mode === 'blinded' ? 'max-w-none' : 'max-w-7xl')}>
-        <header className="mb-6 text-center">
-          <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
-            Jepoku
-          </h1>
-          <p className="mt-2 text-lg text-muted-foreground">
-            A reverse Pokedoku. Can you guess the common trait for each row and column?
-          </p>
+        <header className="mb-6 flex items-center justify-between">
+          <div className="text-left">
+            <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
+              Jepoku
+            </h1>
+            <p className="mt-2 text-lg text-muted-foreground">
+              A reverse Pokedoku. Can you guess the common trait?
+            </p>
+          </div>
+          <div className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Open game modes</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Game Modes</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/" className={cn(mode === 'normal' && 'font-bold')}>Normal Mode</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/?mode=hard" className={cn(mode === 'hard' && 'font-bold')}>Hard Mode</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/?mode=blinded" className={cn(mode === 'blinded' && 'font-bold')}>Blinded Mode</Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem disabled>
+                    Easy Mode
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
+                <DropdownMenuItem disabled>
+                    Odd one out
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                    Imposter
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                    Scarred Mode
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
-
-        <div className="mb-4 flex flex-wrap justify-center gap-2">
-            <Button asChild variant={mode === 'normal' ? 'default' : 'secondary'}>
-                <Link href="/">
-                Normal Mode
-                </Link>
-            </Button>
-            <Button asChild variant={mode === 'hard' ? 'destructive' : 'secondary'}>
-                <Link href="/?mode=hard">
-                Hard Mode
-                </Link>
-            </Button>
-            <Button asChild variant={mode === 'blinded' ? 'outline' : 'secondary'} className={mode === 'blinded' ? 'bg-black text-white border-white' : ''}>
-                <Link href="/?mode=blinded">
-                Blinded Mode
-                </Link>
-            </Button>
-        </div>
 
         <PuzzleLoader
           key={mode}
