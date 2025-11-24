@@ -2,15 +2,13 @@
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
-import type { Puzzle, ValidationResult, Pokemon } from '@/lib/definitions';
+import type { Puzzle, ValidationResult, Pokemon, JepokuMode } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export const revalidate = 0;
 
-type JepokuMode = 'normal' | 'hard';
-
-export async function getNewPuzzle(mode: JepokuMode) {
+async function getNewPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
   'use server';
   return generatePuzzle(mode);
 }
@@ -93,45 +91,38 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
 }
 
 async function checkAnswers(
-  puzzle: Puzzle,
   prevState: ValidationResult,
   formData: FormData
 ): Promise<ValidationResult> {
   'use server';
-  
-  if (!puzzle) {
-      return {
-          rowResults: [null, null, null],
-          colResults: [null, null, null],
-          isCorrect: false,
-      };
+
+  const puzzleString = formData.get('puzzle') as string;
+  if (!puzzleString) {
+    return {
+        rowResults: [],
+        colResults: [],
+        isCorrect: false,
+    };
   }
 
-  const guesses = {
-    rows: [
-      formData.get('row-0') as string,
-      formData.get('row-1') as string,
-      formData.get('row-2') as string,
-    ],
-    cols: [
-      formData.get('col-0') as string,
-      formData.get('col-1') as string,
-      formData.get('col-2') as string,
-    ],
-  };
+  const puzzle: Puzzle = JSON.parse(puzzleString);
+  const gridSize = puzzle.grid.length;
 
-  const rowResults = guesses.rows.map((guess, r) => {
+  const rowGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`row-${i}`) as string);
+  const colGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`col-${i}`) as string);
+
+  const rowResults = rowGuesses.map((guess, r) => {
     if (!guess) return false;
-    const pokemonInRow = [puzzle.grid[r][0], puzzle.grid[r][1], puzzle.grid[r][2]];
+    const pokemonInRow = puzzle.grid[r];
     return pokemonInRow.every(pokemon => {
       if (!pokemon) return false;
       return getPokemonCriteria(pokemon).has(guess);
     });
   });
 
-  const colResults = guesses.cols.map((guess, c) => {
+  const colResults = colGuesses.map((guess, c) => {
     if (!guess) return false;
-    const pokemonInCol = [puzzle.grid[0][c], puzzle.grid[1][c], puzzle.grid[2][c]];
+    const pokemonInCol = puzzle.grid.map(row => row[c]);
     return pokemonInCol.every(pokemon => {
       if (!pokemon) return false;
       return getPokemonCriteria(pokemon).has(guess);
@@ -152,15 +143,15 @@ interface HomePageProps {
 }
 
 export default function HomePage({ searchParams }: HomePageProps) {
-  const mode = searchParams.mode === 'hard' ? 'hard' : 'normal';
-  const isHardMode = mode === 'hard';
-
-  const boundGetPuzzleAction = getNewPuzzle.bind(null, mode);
-  const boundCheckAnswersAction = checkAnswers.bind(null);
+  const mode: JepokuMode = searchParams.mode === 'hard' ? 'hard' : (searchParams.mode === 'blinded' ? 'blinded' : 'normal');
 
   return (
-    <main className={cn("flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-8 transition-colors duration-500", isHardMode ? "bg-red-950/20" : "")}>
-      <div className="w-full max-w-4xl">
+    <main className={cn(
+      "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6 transition-colors duration-500",
+      mode === 'hard' ? "bg-red-950/20" : "",
+      mode === 'blinded' ? "bg-gray-900/90 justify-start" : "justify-center",
+    )}>
+      <div className={cn("w-full", mode === 'blinded' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 text-center">
           <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
             Jepoku
@@ -170,17 +161,27 @@ export default function HomePage({ searchParams }: HomePageProps) {
           </p>
         </header>
 
-        <div className="mb-4 flex justify-center">
-          <Button asChild variant={isHardMode ? "destructive" : "secondary"}>
-            <Link href={isHardMode ? '/' : '/?mode=hard'}>
-              {isHardMode ? 'Switch to Normal Mode' : 'Switch to Hard Mode'}
-            </Link>
-          </Button>
+        <div className="mb-4 flex flex-wrap justify-center gap-2">
+            <Button asChild variant={mode === 'normal' ? 'default' : 'secondary'}>
+                <Link href="/">
+                Normal Mode
+                </Link>
+            </Button>
+            <Button asChild variant={mode === 'hard' ? 'destructive' : 'secondary'}>
+                <Link href="/?mode=hard">
+                Hard Mode
+                </Link>
+            </Button>
+            <Button asChild variant={mode === 'blinded' ? 'outline' : 'secondary'} className={mode === 'blinded' ? 'bg-black text-white border-white' : ''}>
+                <Link href="/?mode=blinded">
+                Blinded Mode
+                </Link>
+            </Button>
         </div>
 
         <PuzzleLoader
           key={mode}
-          getPuzzleAction={boundGetPuzzleAction}
+          getPuzzleAction={getNewPuzzle}
           checkAnswersAction={checkAnswers}
           mode={mode}
         />

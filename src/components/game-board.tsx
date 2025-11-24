@@ -4,9 +4,9 @@ import type { FC } from 'react';
 import React, { useState, useEffect, useMemo, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
-import { Check, Send, Trophy, X, HelpCircle } from 'lucide-react';
+import { Check, Send, Trophy, X, HelpCircle, EyeOff } from 'lucide-react';
 
-import type { Puzzle, ValidationResult } from '@/lib/definitions';
+import type { Puzzle, ValidationResult, JepokuMode } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -25,13 +25,15 @@ import {
 } from '@/components/ui/select';
 import { NORMAL_CRITERIA, HARD_CRITERIA } from '@/lib/criteria';
 
-type JepokuMode = 'normal' | 'hard';
 
-const initialValidationState: ValidationResult = {
-  rowResults: [null, null, null],
-  colResults: [null, null, null],
-  isCorrect: false,
-};
+function getInitialState(puzzle: Puzzle): ValidationResult {
+  const size = puzzle.grid.length;
+  return {
+    rowResults: Array(size).fill(null),
+    colResults: Array(size).fill(null),
+    isCorrect: false,
+  }
+}
 
 interface GameBoardProps {
   puzzle: Puzzle;
@@ -54,13 +56,16 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
 }
 
 export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode }) => {
-  const [state, formAction] = useActionState(checkAnswersAction, initialValidationState);
+  const [state, formAction] = useActionState(checkAnswersAction, getInitialState(puzzle));
 
   const [score, setScore] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
 
   const puzzleId = useMemo(() => puzzle.grid.flat().map(p => p?.id).join('-'), [puzzle]);
+  
+  const gridSize = puzzle.grid.length;
+  const isBlinded = mode === 'blinded';
 
   const criteriaPool = mode === 'hard' ? HARD_CRITERIA : NORMAL_CRITERIA;
 
@@ -119,7 +124,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
 
   return (
     <TooltipProvider>
-      <Card>
+      <Card className={cn(isBlinded ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
         <CardContent className="p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xl font-bold">
@@ -128,8 +133,8 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
             </div>
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <HelpCircle className="h-6 w-6 text-muted-foreground" />
+                    <Button variant="ghost" size="icon" className={cn(isBlinded ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
+                        <HelpCircle className="h-6 w-6" />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -138,10 +143,11 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
             </Tooltip>
           </div>
           <form action={formAction} className="space-y-6">
-            <div className="grid grid-cols-[auto,1fr] items-center gap-2 sm:gap-4">
+             <input type="hidden" name="puzzle" value={JSON.stringify(puzzle)} />
+            <div className={cn("grid items-center gap-2 sm:gap-4", isBlinded ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
               <div />
-              <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                {[0, 1, 2].map((i) => (
+              <div className={cn("grid gap-2 sm:gap-4", `grid-cols-${gridSize}`)} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
+                {Array.from({ length: gridSize }).map((_, i) => (
                   <div key={`col-input-${i}`} className="relative">
                     <Select name={`col-${i}`} disabled={state.isCorrect}>
                       <SelectTrigger className={cn('font-semibold', getSelectClass(state.colResults[i]))}>
@@ -161,8 +167,8 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 ))}
               </div>
 
-              <div className="grid grid-rows-3 gap-2 sm:gap-4">
-                {[0, 1, 2].map((i) => (
+              <div className={cn("grid gap-2 sm:gap-4", `grid-rows-${gridSize}`)} style={{ gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))` }}>
+                {Array.from({ length: gridSize }).map((_, i) => (
                   <div key={`row-input-${i}`} className="relative flex items-center h-full">
                     <Select name={`row-${i}`} disabled={state.isCorrect}>
                       <SelectTrigger className={cn('w-28 font-semibold', getSelectClass(state.rowResults[i]))}>
@@ -182,31 +188,49 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 ))}
               </div>
 
-              <div className={cn("grid grid-cols-3 gap-2 sm:gap-4 transition-opacity duration-700 ease-in-out", showPuzzle ? 'opacity-100' : 'opacity-0')}>
-                {puzzle.grid.flat().map((pokemon, i) => (
-                  <div key={pokemon?.id || i} className="aspect-square w-full">
-                    {pokemon ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <div className="relative h-full w-full overflow-hidden rounded-lg bg-gray-100 shadow-inner">
-                            <Image
-                              src={pokemon.spriteUrl}
-                              alt={pokemon.name}
-                              fill
-                              sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 200px"
-                              className="object-contain transition-transform duration-300 hover:scale-110"
-                            />
-                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="capitalize">{pokemon.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <div className="h-full w-full animate-pulse rounded-lg bg-muted" />
-                    )}
-                  </div>
-                ))}
+              <div className={cn(
+                  "grid gap-2 sm:gap-4 transition-opacity duration-700 ease-in-out",
+                  `grid-cols-${gridSize}`,
+                  showPuzzle ? 'opacity-100' : 'opacity-0'
+                )}
+                style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+                >
+                {puzzle.grid.flat().map((pokemon, i) => {
+                  const row = Math.floor(i / gridSize);
+                  const col = i % gridSize;
+                  const isVisible = !isBlinded || puzzle.visibleMask?.[row]?.[col];
+
+                  return (
+                    <div key={pokemon?.id || i} className="aspect-square w-full sm:w-24 md:w-28 lg:w-32">
+                      {pokemon ? (
+                        isVisible ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="relative h-full w-full overflow-hidden rounded-lg bg-gray-100 shadow-inner">
+                                <Image
+                                  src={pokemon.spriteUrl}
+                                  alt={pokemon.name}
+                                  fill
+                                  sizes="(max-width: 640px) 15vw, 128px"
+                                  className="object-contain transition-transform duration-300 hover:scale-110"
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="capitalize">{pokemon.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center rounded-lg bg-black shadow-inner">
+                            <EyeOff className="h-8 w-8 text-gray-600" />
+                          </div>
+                        )
+                      ) : (
+                        <div className="h-full w-full animate-pulse rounded-lg bg-muted" />
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -215,7 +239,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 <div className="text-center space-y-4">
                     <p className="text-2xl font-bold text-green-600">You solved it!</p>
                     <Button asChild size="lg" className="w-full">
-                        <a href={mode === 'hard' ? '/?mode=hard' : '/'}>Play Next Puzzle</a>
+                        <a href={`/?mode=${mode}`}>Play Next Puzzle</a>
                     </Button>
                 </div>
               ) : (

@@ -24,10 +24,13 @@ export interface Pokemon {
   };
 }
 
+export type JepokuMode = 'normal' | 'hard' | 'blinded';
+
 export interface Puzzle {
   grid: (Pokemon | null)[][];
   rowAnswers: string[];
   colAnswers: string[];
+  visibleMask?: boolean[][];
 }
 
 export interface ValidationResult {

@@ -1,11 +1,20 @@
 import 'server-only';
 import { getAllPokemonWithDetails } from './pokedex';
-import type { Puzzle, Pokemon } from './definitions';
+import type { Puzzle, Pokemon, JepokuMode } from './definitions';
 import { NORMAL_CRITERIA, HARD_CRITERIA } from './criteria';
 
-const MAX_PUZZLE_ATTEMPTS = 500;
-const GRID_SIZE = 3;
-type JepokuMode = 'normal' | 'hard';
+const MAX_PUZZLE_ATTEMPTS = 1000;
+
+const REGIONS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Alola', 'Galar', 'Paldea'];
+
+const IMPOSSIBLE_TYPE_PAIRS: [string, string][] = [
+    ['Normal', 'Bug'], ['Normal', 'Ice'], ['Normal', 'Rock'], ['Normal', 'Steel'],
+    ['Fire', 'Fairy'],
+    ['Ice', 'Poison'],
+    ['Ground', 'Fairy'],
+    ['Bug', 'Dragon'],
+    ['Rock', 'Ghost']
+];
 
 function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length, randomIndex;
@@ -93,6 +102,53 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     return criteria;
 }
 
+function generateVisibilityMask(gridSize: number, visibleCount: number): boolean[][] {
+    const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
+    
+    // Rows
+    for (let r = 0; r < gridSize; r++) {
+        const visibleIndices = shuffle(Array.from({length: gridSize}, (_, i) => i)).slice(0, visibleCount);
+        for (const c of visibleIndices) {
+            mask[r][c] = true;
+        }
+    }
+
+    // Columns
+    for (let c = 0; c < gridSize; c++) {
+        const currentVisible = mask.map(row => row[c]).filter(Boolean).length;
+        if (currentVisible >= visibleCount) continue;
+
+        const hiddenIndices = [];
+        for (let r = 0; r < gridSize; r++) {
+            if (!mask[r][c]) hiddenIndices.push(r);
+        }
+        
+        const newlyVisible = shuffle(hiddenIndices).slice(0, visibleCount - currentVisible);
+        for (const r of newlyVisible) {
+            mask[r][c] = true;
+        }
+    }
+
+    // Final check to ensure rows have enough visible, can happen due to column logic overriding
+     for (let r = 0; r < gridSize; r++) {
+        const currentVisible = mask[r].filter(Boolean).length;
+        if (currentVisible >= visibleCount) continue;
+
+        const hiddenIndices = [];
+        for (let c = 0; c < gridSize; c++) {
+            if (!mask[r][c]) hiddenIndices.push(c);
+        }
+        
+        const newlyVisible = shuffle(hiddenIndices).slice(0, visibleCount - currentVisible);
+        for (const c of newlyVisible) {
+            mask[r][c] = true;
+        }
+    }
+
+    return mask;
+}
+
+
 async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     const allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
@@ -100,27 +156,63 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         return null;
     }
 
+    const gridSize = mode === 'blinded' ? 6 : 3;
     const criteriaPool = mode === 'hard' ? HARD_CRITERIA : NORMAL_CRITERIA;
     const shuffledPokemon = shuffle(allPokemon);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
         const shuffledCriteria = shuffle([...criteriaPool]);
-        if (shuffledCriteria.length < GRID_SIZE * 2) return null;
+        if (shuffledCriteria.length < gridSize * 2) return null;
 
-        const rowAnswers = shuffledCriteria.slice(0, GRID_SIZE);
-        const colAnswers = shuffledCriteria.slice(GRID_SIZE, GRID_SIZE * 2);
+        let rowAnswers: string[];
+        let colAnswers: string[];
+
+        if (mode === 'blinded') {
+            const useRegionsOnRows = Math.random() > 0.5;
+            const regionCriteria = shuffle(REGIONS).slice(0, gridSize);
+            const nonRegionCriteria = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
+            
+            if (useRegionsOnRows) {
+                rowAnswers = regionCriteria;
+                colAnswers = nonRegionCriteria.slice(0, gridSize);
+            } else {
+                colAnswers = regionCriteria;
+                rowAnswers = nonRegionCriteria.slice(0, gridSize);
+            }
+
+            // Check for impossible type pairs
+            const rowTypes = rowAnswers.map(c => c.split(' ')[0]);
+            const colTypes = colAnswers.map(c => c.split(' ')[0]);
+            let impossiblePairFound = false;
+            for (const rType of rowTypes) {
+                for (const cType of colTypes) {
+                     const pair1 = `${rType}/${cType}`;
+                     const pair2 = `${cType}/${rType}`;
+                     if (IMPOSSIBLE_TYPE_PAIRS.some(p => `${p[0]}/${p[1]}` === pair1 || `${p[0]}/${p[1]}` === pair2)) {
+                        impossiblePairFound = true;
+                        break;
+                    }
+                }
+                if (impossiblePairFound) break;
+            }
+            if (impossiblePairFound) continue;
+
+        } else {
+            rowAnswers = shuffledCriteria.slice(0, gridSize);
+            colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
+        }
 
         const allAnswers = new Set([...rowAnswers, ...colAnswers]);
-        if (allAnswers.size !== GRID_SIZE * 2) {
+        if (allAnswers.size !== gridSize * 2) {
             continue;
         }
 
-        const grid: (Pokemon | null)[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        const grid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
         const usedPokemonIds = new Set<number>();
         let success = true;
 
-        for (let r = 0; r < GRID_SIZE; r++) {
-            for (let c = 0; c < GRID_SIZE; c++) {
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
                 const rowCriterion = rowAnswers[r];
                 const colCriterion = colAnswers[c];
 
@@ -143,11 +235,17 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         }
 
         if (success) {
-            return {
+            const puzzle: Puzzle = {
                 grid: grid as Pokemon[][],
                 rowAnswers,
                 colAnswers,
             };
+
+            if (mode === 'blinded') {
+                puzzle.visibleMask = generateVisibilityMask(gridSize, 3);
+            }
+
+            return puzzle;
         }
     }
 

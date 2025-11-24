@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import type { Puzzle, ValidationResult } from '@/lib/definitions';
+import type { Puzzle, ValidationResult, JepokuMode } from '@/lib/definitions';
 import { GameBoard } from '@/components/game-board';
 import { Loader2 } from 'lucide-react';
 import {
@@ -13,12 +13,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-type JepokuMode = 'normal' | 'hard';
-
 interface PuzzleLoaderProps {
-  getPuzzleAction: () => Promise<Puzzle | null>;
+  getPuzzleAction: (mode: JepokuMode) => Promise<Puzzle | null>;
   checkAnswersAction: (
-    puzzle: Puzzle,
     state: ValidationResult,
     payload: FormData
   ) => Promise<ValidationResult>;
@@ -30,36 +27,18 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!puzzle) {
-      const getPuzzle = () => {
-        startTransition(async () => {
-          const newPuzzle = await getPuzzleAction();
-          if (newPuzzle) {
-            setPuzzle(newPuzzle);
-          }
-        });
-      };
-      
-      getPuzzle();
+    // Reset puzzle when mode changes
+    setPuzzle(null);
 
-      const interval = setInterval(() => {
-        setPuzzle(currentPuzzle => {
-            if (currentPuzzle) {
-                clearInterval(interval);
-                return currentPuzzle;
-            }
-            if (!isPending) {
-                getPuzzle();
-            }
-            return null;
-        });
-      }, 1000); 
+    startTransition(async () => {
+      const newPuzzle = await getPuzzleAction(mode);
+      setPuzzle(newPuzzle);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]); // We only want to re-run this when the mode changes.
 
-      return () => clearInterval(interval);
-    }
-  }, [getPuzzleAction, isPending, puzzle]);
 
-  if (!puzzle) {
+  if (isPending || !puzzle) {
     return (
         <Card className="text-center">
           <CardHeader>
@@ -78,9 +57,7 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
     );
   }
 
-  const boundCheckAnswersAction = checkAnswersAction.bind(null, puzzle);
-
   return (
-    <GameBoard puzzle={puzzle} checkAnswersAction={boundCheckAnswersAction} mode={mode} />
+    <GameBoard puzzle={puzzle} checkAnswersAction={checkAnswersAction} mode={mode} />
   );
 }
