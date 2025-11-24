@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { NORMAL_CRITERIA, HARD_CRITERIA } from '@/lib/criteria';
+import { NORMAL_CRITERIA, HARD_CRITERIA, EASY_CRITERIA } from '@/lib/criteria';
 
 
 function getInitialState(puzzle: Puzzle): ValidationResult {
@@ -67,7 +67,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   const gridSize = puzzle.grid.length;
   const isBlinded = mode === 'blinded';
 
-  const criteriaPool = mode === 'hard' ? HARD_CRITERIA : NORMAL_CRITERIA;
+  const criteriaPool = mode === 'hard' ? HARD_CRITERIA : mode === 'easy' ? EASY_CRITERIA : NORMAL_CRITERIA;
 
   useEffect(() => {
     const savedScore = localStorage.getItem('jepokuScore');

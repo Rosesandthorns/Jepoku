@@ -1,4 +1,12 @@
 
+export const EASY_CRITERIA = [
+  'Normal', 'Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Fighting', 'Poison', 
+  'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Steel', 
+  'Fairy', 'Dark',
+  'Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Alola', 'Galar', 'Paldea',
+  'Can Evolve', 'Final Evolution',
+];
+
 export const NORMAL_CRITERIA = [
   'Normal',
   'Fire',

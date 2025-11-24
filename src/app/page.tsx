@@ -182,6 +182,9 @@ export default function HomePage({ searchParams }: HomePageProps) {
                 <DropdownMenuLabel>Game Modes</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                    <Link href="/?mode=easy" className={cn(mode === 'easy' && 'font-bold')}>Easy Mode</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/" className={cn(mode === 'normal' && 'font-bold')}>Normal Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -189,9 +192,6 @@ export default function HomePage({ searchParams }: HomePageProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/?mode=blinded" className={cn(mode === 'blinded' && 'font-bold')}>Blinded Mode</Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem disabled>
-                    Easy Mode
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>

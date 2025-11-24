@@ -1,7 +1,7 @@
 import 'server-only';
 import { getAllPokemonWithDetails } from './pokedex';
 import type { Puzzle, Pokemon, JepokuMode } from './definitions';
-import { NORMAL_CRITERIA, HARD_CRITERIA } from './criteria';
+import { NORMAL_CRITERIA, HARD_CRITERIA, EASY_CRITERIA } from './criteria';
 
 const MAX_PUZZLE_ATTEMPTS = 5000;
 
@@ -191,7 +191,7 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     }
 
     const gridSize = mode === 'blinded' ? 6 : 3;
-    const criteriaPool = mode === 'hard' ? HARD_CRITERIA : NORMAL_CRITERIA;
+    const criteriaPool = mode === 'hard' ? HARD_CRITERIA : mode === 'easy' ? EASY_CRITERIA : NORMAL_CRITERIA;
     const shuffledPokemon = shuffle(allPokemon);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
