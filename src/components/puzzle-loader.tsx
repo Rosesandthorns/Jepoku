@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -7,6 +8,7 @@ import { GameBoard } from '@/components/game-board';
 import { MissMatchedBoard } from '@/components/miss-matched-board';
 import { TimerModeBoard } from '@/components/timer-mode-board';
 import { OrderModeBoard } from '@/components/order-mode-board';
+import { DittoModeBoard } from '@/components/ditto-mode-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -32,8 +34,8 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (mode === 'timer') {
-      setPuzzle(null); // Timer mode manages its own puzzle loading
+    if (mode === 'timer' || mode === 'ditto') {
+      setPuzzle(null); // These modes manage their own puzzle loading
       return;
     }
     // Reset puzzle when mode changes
@@ -48,6 +50,10 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
 
   if (mode === 'timer') {
     return <TimerModeBoard getPuzzleAction={getPuzzleAction} checkAnswersAction={checkAnswersAction} />;
+  }
+  
+  if (mode === 'ditto') {
+    return <DittoModeBoard getPuzzleAction={getPuzzleAction} checkAnswersAction={checkAnswersAction} />;
   }
 
 

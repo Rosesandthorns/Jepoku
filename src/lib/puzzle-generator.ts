@@ -1,4 +1,5 @@
 
+
 import 'server-only';
 import { getAllPokemonWithDetails } from './pokedex';
 import type { Puzzle, Pokemon, JepokuMode, OrderBy } from './definitions';
@@ -173,20 +174,25 @@ function generateVisibilityMask(gridSize: number): boolean[][] {
 
 
 async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
-    const allPokemon = await getAllPokemonWithDetails();
+    let allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
         console.error("No Pokemon data available.");
         return null;
     }
 
-    const isBlindedLike = mode === 'blinded';
-    const isHardLike = mode === 'hard' || mode === 'imposter';
+    if (mode === 'ditto') {
+        allPokemon = allPokemon.filter(p => p.name !== 'ditto');
+    }
+
+    const isBlindedLike = mode === 'blinded' || mode === 'scarred';
+    const isHardLike = mode === 'hard' || mode === 'imposter' || mode === 'scarred';
     const gridSize = isBlindedLike ? 6 : 3;
 
     let criteriaPool: string[];
     switch (mode) {
         case 'hard':
         case 'imposter':
+        case 'scarred':
             criteriaPool = [...HARD_CRITERIA, ...NORMAL_CRITERIA];
             break;
         case 'easy':
@@ -599,7 +605,11 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         case 'hard':
         case 'blinded':
         case 'timer':
+        case 'ditto':
             return createStandardPuzzle(mode);
+        case 'scarred':
+             console.warn("Scarred mode is under development and may be unstable.");
+             return createStandardPuzzle(mode);
         default:
             return createStandardPuzzle('normal');
     }

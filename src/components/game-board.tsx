@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { FC } from 'react';
@@ -7,7 +8,7 @@ import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { Check, Send, Trophy, X, HelpCircle, EyeOff } from 'lucide-react';
 
-import type { Puzzle, ValidationResult, JepokuMode } from '@/lib/definitions';
+import type { Puzzle, ValidationResult, JepokuMode, Pokemon } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,8 @@ interface GameBoardProps {
   ) => Promise<ValidationResult>;
   mode: JepokuMode;
   onSolve?: () => void;
+  onFail?: () => void;
+  isDittoTransform?: boolean;
 }
 
 function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
@@ -60,7 +63,7 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
   );
 }
 
-export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode, onSolve }) => {
+export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode, onSolve, onFail, isDittoTransform }) => {
   const [state, formAction] = useActionState(checkAnswersAction, getInitialState(puzzle));
 
   const [score, setScore] = useState(0);
@@ -73,15 +76,15 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   
   const gridSize = puzzle.grid.length;
   const isBlindedLike = mode === 'blinded' || mode === 'scarred';
-  const isDarkTheme = isBlindedLike || mode === 'odd-one-out' || mode === 'imposter' || mode === 'miss-matched' || mode === 'timer';
+  const isDarkTheme = isBlindedLike || mode === 'odd-one-out' || mode === 'imposter' || mode === 'miss-matched' || mode === 'timer' || mode === 'ditto';
   const isOddOneOut = mode === 'odd-one-out';
   const isImposter = mode === 'imposter';
-  const isTimerMode = mode === 'timer';
+  const isMetaMode = mode === 'timer' || mode === 'ditto';
 
   const criteriaPool = mode === 'hard' || mode === 'imposter' ? HARD_CRITERIA : mode === 'easy' || mode === 'timer' ? EASY_CRITERIA : NORMAL_CRITERIA;
 
   useEffect(() => {
-    if (isTimerMode) return;
+    if (isMetaMode) return;
     const savedScore = localStorage.getItem('jepokuScore');
     if (savedScore) {
       setScore(parseInt(savedScore, 10));
@@ -89,17 +92,17 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
     // Fade in the puzzle on mount
     const timer = setTimeout(() => setShowPuzzle(true), 100);
     return () => clearTimeout(timer);
-  }, [isTimerMode]);
+  }, [isMetaMode]);
 
   useEffect(() => {
-    setShowPuzzle(true); // Always show puzzle immediately for timer mode or re-renders
+    setShowPuzzle(true); // Always show puzzle immediately for meta modes or re-renders
   }, [puzzleId]);
 
 
   useEffect(() => {
-    if (state.isCorrect) {
+    if (state.isCorrect === true) {
       if(onSolve) {
-        // In modes like Timer mode, let the parent handle solve state
+        // In modes like Timer or Ditto, let the parent handle solve state
         onSolve();
       } else {
         // Standard score keeping
@@ -111,8 +114,12 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
           localStorage.setItem('lastSolvedPuzzleId', puzzleId);
         }
       }
+    } else if (state.isCorrect === false) {
+      if (onFail) {
+        onFail();
+      }
     }
-  }, [state.isCorrect, puzzleId, score, onSolve]);
+  }, [state.isCorrect, puzzleId, score, onSolve, onFail]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -186,7 +193,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
       <Card className={cn(isDarkTheme ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
         <CardContent className="p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            {!isTimerMode && (
+            {!isMetaMode && (
                 <div className="flex items-center gap-2 text-xl font-bold">
                     <Trophy className="h-6 w-6 text-yellow-500" />
                     <span>Score: {score}</span>
@@ -194,7 +201,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
             )}
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className={cn(isDarkTheme ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
+                    <Button variant="ghost" size="icon" className={cn('ml-auto', isDarkTheme ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
                         <HelpCircle className="h-6 w-6" />
                     </Button>
                 </TooltipTrigger>
@@ -275,20 +282,24 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                   const col = i % gridSize;
                   const isVisible = !isBlindedLike || puzzle.visibleMask?.[row]?.[col];
 
+                  const pokemonToShow = isDittoTransform 
+                    ? { id: 132, name: 'ditto', spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/132.png` }
+                    : pokemon;
+
                   return (
                     <div 
                       key={pokemon?.id || i} 
                       className={cn("aspect-square w-full sm:w-24 md:w-28 lg:w-32 rounded-lg transition-all", getOddOneOutTileClass(row, col))}
                       onClick={(isOddOneOut || isImposter) ? () => handleImposterSelect(row, col) : undefined}
                     >
-                      {pokemon ? (
+                      {pokemonToShow ? (
                         isVisible ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="relative h-full w-full overflow-hidden rounded-lg bg-gray-100 shadow-inner">
                                 <Image
-                                  src={pokemon.spriteUrl}
-                                  alt={pokemon.name}
+                                  src={pokemonToShow.spriteUrl}
+                                  alt={pokemonToShow.name}
                                   fill
                                   sizes="(max-width: 640px) 15vw, 128px"
                                   className="object-contain transition-transform duration-300 hover:scale-110"
@@ -296,7 +307,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="capitalize">{pokemon.name}</p>
+                              <p className="capitalize">{pokemonToShow.name}</p>
                             </TooltipContent>
                           </Tooltip>
                         ) : (
@@ -321,7 +332,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
 
             <div className="mt-6">
               {state.isCorrect ? (
-                !isTimerMode && (
+                !isMetaMode && (
                     <div className="text-center space-y-4">
                         <p className="text-2xl font-bold text-green-600">You solved it!</p>
                         <Button asChild size="lg" className="w-full">

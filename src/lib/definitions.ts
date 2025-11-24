@@ -1,4 +1,5 @@
 
+
 export interface Pokemon {
   id: number;
   name: string;
@@ -27,7 +28,7 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'scarred' | 'miss-matched' | 'timer' | 'order';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'scarred' | 'miss-matched' | 'timer' | 'order' | 'ditto';
 
 export type OrderBy = 'pokedex' | 'height' | 'weight' | 'bst' | 'hp' | 'attack' | 'defense' | 'special-attack' | 'special-defense' | 'speed';
 

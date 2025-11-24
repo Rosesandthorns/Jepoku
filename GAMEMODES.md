@@ -55,6 +55,12 @@ This document provides a brief overview of each game mode available in Jepoku.
 - **Mechanic**: Similar to "Odd One Out," but on a smaller grid with more difficult criteria. There is only a single imposter on the entire board.
 - **Goal**: Correctly guess all 6 criteria AND select the one imposter Pokémon.
 
+### Ditto Mode
+- **Grid Size**: 3x3
+- **Criteria**: Uses the "Normal Mode" criteria set.
+- **Mechanic**: A high-stakes survival mode. Solve a puzzle correctly, and the board transforms into a new puzzle. If you make a single incorrect guess, the game ends.
+- **Goal**: Achieve the longest streak of correctly solved puzzles. Score is not added to the main leaderboard.
+
 ## Coming Soon
 
 ### Scarred Mode
