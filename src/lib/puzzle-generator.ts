@@ -116,54 +116,51 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
 
 function generateVisibilityMask(gridSize: number, visibleCount: number): boolean[][] {
     const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
-    const indices = Array.from({ length: gridSize }, (_, i) => i);
-    
-    // Initial random population
-    for (let r = 0; r < gridSize; r++) {
+    let indices = Array.from({ length: gridSize }, (_, i) => i);
+
+    // Initial population, aiming for `visibleCount` in each row
+    for(let r=0; r<gridSize; r++) {
         const visibleCols = shuffle(indices).slice(0, visibleCount);
-        for (const c of visibleCols) {
+        for(const c of visibleCols) {
             mask[r][c] = true;
         }
     }
+    
+    // Iteratively balance the grid, this is a brute-force approach
+    for (let i = 0; i < 50; i++) { // Limit iterations to prevent infinite loops
+        let changed = false;
 
-    // Iteratively balance the grid
-    for (let iteration = 0; iteration < 50; iteration++) {
-        let isPerfect = true;
-
-        // Check and adjust columns
-        for (let c = 0; c < gridSize; c++) {
-            const visibleRows = indices.filter(r => mask[r][c]);
-            const diff = visibleRows.length - visibleCount;
-            if (diff > 0) { // Too many visible
-                isPerfect = false;
-                const toHide = shuffle(visibleRows).slice(0, diff);
-                toHide.forEach(r => mask[r][c] = false);
-            } else if (diff < 0) { // Too few visible
-                isPerfect = false;
-                const hiddenRows = indices.filter(r => !mask[r][c]);
-                const toShow = shuffle(hiddenRows).slice(0, -diff);
-                toShow.forEach(r => mask[r][c] = true);
+        // Balance columns
+        for(let c=0; c<gridSize; c++) {
+            const visibleInCol = indices.filter(r => mask[r][c]);
+            const diff = visibleInCol.length - visibleCount;
+            if (diff > 0) { // too many visible
+                const toHide = shuffle(visibleInCol).slice(0, diff);
+                toHide.forEach(r => { mask[r][c] = false; changed=true; });
+            } else if (diff < 0) { // too few visible
+                const hiddenInCol = indices.filter(r => !mask[r][c]);
+                const toShow = shuffle(hiddenInCol).slice(0, -diff);
+                toShow.forEach(r => { mask[r][c] = true; changed=true; });
             }
         }
         
-        // Check and adjust rows
-        for (let r = 0; r < gridSize; r++) {
-            const visibleCols = indices.filter(c => mask[r][c]);
-            const diff = visibleCols.length - visibleCount;
-            if (diff > 0) { // Too many visible
-                isPerfect = false;
-                const toHide = shuffle(visibleCols).slice(0, diff);
-                toHide.forEach(c => mask[r][c] = false);
-            } else if (diff < 0) { // Too few visible
-                isPerfect = false;
-                const hiddenCols = indices.filter(c => !mask[r][c]);
-                const toShow = shuffle(hiddenCols).slice(0, -diff);
-                toShow.forEach(c => mask[r][c] = true);
+        // Balance rows
+         for(let r=0; r<gridSize; r++) {
+            const visibleInRow = indices.filter(c => mask[r][c]);
+            const diff = visibleInRow.length - visibleCount;
+            if (diff > 0) { // too many visible
+                const toHide = shuffle(visibleInRow).slice(0, diff);
+                toHide.forEach(c => { mask[r][c] = false; changed=true; });
+            } else if (diff < 0) { // too few visible
+                const hiddenInRow = indices.filter(c => !mask[r][c]);
+                const toShow = shuffle(hiddenInRow).slice(0, -diff);
+                toShow.forEach(c => { mask[r][c] = true; changed=true; });
             }
         }
 
-        if (isPerfect) break;
+        if (!changed) break; // If a full pass makes no changes, we're stable.
     }
+
 
     return mask;
 }
@@ -201,21 +198,32 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
 
         // --- CRITERIA SELECTION LOGIC ---
         if (isHardLike) {
-            const groupA = OPPOSING_HARD_CRITERIA.map(p => p[0]);
-            const groupB = OPPOSING_HARD_CRITERIA.map(p => p[1]);
-            const others = HARD_CRITERIA.filter(c => !groupA.includes(c) && !groupB.includes(c));
+            let availableCriteria = [...criteriaPool];
+            const allSelected: string[] = [];
             
-            const poolA = shuffle([...groupA, ...others]);
-            const poolB = shuffle([...groupB, ...others]);
+            for(let i = 0; i < gridSize * 2; i++) {
+                if (availableCriteria.length === 0) break;
+                
+                const selected = shuffle(availableCriteria)[0];
+                allSelected.push(selected);
+                
+                // Remove selected from pool
+                availableCriteria = availableCriteria.filter(c => c !== selected);
 
-            if (Math.random() > 0.5) {
-                rowAnswers = poolA.slice(0, gridSize);
-                colAnswers = poolB.slice(0, gridSize);
-            } else {
-                rowAnswers = poolB.slice(0, gridSize);
-                colAnswers = poolA.slice(0, gridSize);
+                // If selected is part of a pair, remove its opposite
+                const opposingPair = OPPOSING_HARD_CRITERIA.find(p => p.includes(selected));
+                if (opposingPair) {
+                    const opposite = opposingPair.find(p => p !== selected);
+                    availableCriteria = availableCriteria.filter(c => c !== opposite);
+                }
             }
-        } else if (isBlindedLike) { // For 'blinded' mode (which is normal criteria)
+
+            if (allSelected.length < gridSize * 2) continue; // Not enough unique criteria
+
+            rowAnswers = allSelected.slice(0, gridSize);
+            colAnswers = allSelected.slice(gridSize, gridSize * 2);
+
+        } else if (isBlindedLike) { 
             const regionsCanBeInRows = Math.random() > 0.5;
             const poolWithRegions = shuffle([...criteriaPool]);
             const poolWithoutRegions = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
