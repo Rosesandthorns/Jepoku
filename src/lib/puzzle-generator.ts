@@ -3,7 +3,7 @@ import { getAllPokemonWithDetails } from './pokedex';
 import type { Puzzle, Pokemon, JepokuMode } from './definitions';
 import { NORMAL_CRITERIA, HARD_CRITERIA } from './criteria';
 
-const MAX_PUZZLE_ATTEMPTS = 1000;
+const MAX_PUZZLE_ATTEMPTS = 5000;
 
 const REGIONS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Alola', 'Galar', 'Paldea'];
 
@@ -104,44 +104,68 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
 
 function generateVisibilityMask(gridSize: number, visibleCount: number): boolean[][] {
     const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
-    
-    // Rows
+    const indices = Array.from({ length: gridSize }, (_, i) => i);
+
+    // Ensure each row has `visibleCount` visible cells
     for (let r = 0; r < gridSize; r++) {
-        const visibleIndices = shuffle(Array.from({length: gridSize}, (_, i) => i)).slice(0, visibleCount);
-        for (const c of visibleIndices) {
+        const visibleCols = shuffle(indices).slice(0, visibleCount);
+        for (const c of visibleCols) {
             mask[r][c] = true;
         }
     }
 
-    // Columns
+    // Check and adjust columns
     for (let c = 0; c < gridSize; c++) {
-        const currentVisible = mask.map(row => row[c]).filter(Boolean).length;
-        if (currentVisible >= visibleCount) continue;
-
-        const hiddenIndices = [];
+        let colVisibleCount = 0;
         for (let r = 0; r < gridSize; r++) {
-            if (!mask[r][c]) hiddenIndices.push(r);
+            if (mask[r][c]) {
+                colVisibleCount++;
+            }
         }
-        
-        const newlyVisible = shuffle(hiddenIndices).slice(0, visibleCount - currentVisible);
-        for (const r of newlyVisible) {
-            mask[r][c] = true;
+
+        // If a column has too few visible cells, add more
+        if (colVisibleCount < visibleCount) {
+            const deficit = visibleCount - colVisibleCount;
+            const hiddenRows = indices.filter(r => !mask[r][c]);
+            const rowsToReveal = shuffle(hiddenRows).slice(0, deficit);
+            for (const r of rowsToReveal) {
+                mask[r][c] = true;
+            }
+        }
+        // If a column has too many, hide some (this part is tricky)
+        else if (colVisibleCount > visibleCount) {
+            const surplus = colVisibleCount - visibleCount;
+            const visibleRows = indices.filter(r => mask[r][c]);
+            
+            // Find rows that can afford to lose a visible cell
+            const candidatesForHiding = visibleRows.filter(r => {
+                const rowVisibleCount = mask[r].filter(Boolean).length;
+                return rowVisibleCount > visibleCount;
+            });
+            
+            const rowsToHide = shuffle(candidatesForHiding).slice(0, surplus);
+            for (const r of rowsToHide) {
+                mask[r][c] = false;
+            }
         }
     }
-
-    // Final check to ensure rows have enough visible, can happen due to column logic overriding
+    
+    // Final check to enforce row counts, as column adjustments might have changed them
      for (let r = 0; r < gridSize; r++) {
-        const currentVisible = mask[r].filter(Boolean).length;
-        if (currentVisible >= visibleCount) continue;
+        let rowVisibleCount = mask[r].filter(Boolean).length;
+        if (rowVisibleCount > visibleCount) {
+            const surplus = rowVisibleCount - visibleCount;
+            const visibleCols = indices.filter(c => mask[r][c]);
 
-        const hiddenIndices = [];
-        for (let c = 0; c < gridSize; c++) {
-            if (!mask[r][c]) hiddenIndices.push(c);
-        }
-        
-        const newlyVisible = shuffle(hiddenIndices).slice(0, visibleCount - currentVisible);
-        for (const c of newlyVisible) {
-            mask[r][c] = true;
+            const candidatesForHiding = visibleCols.filter(c => {
+                const colVisibleCount = mask.map(row => row[c]).filter(Boolean).length;
+                return colVisibleCount > visibleCount;
+            });
+
+            const colsToHide = shuffle(candidatesForHiding).slice(0, surplus);
+            for (const c of colsToHide) {
+                mask[r][c] = false;
+            }
         }
     }
 

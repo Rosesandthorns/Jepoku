@@ -147,9 +147,8 @@ export default function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <main className={cn(
-      "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6 transition-colors duration-500",
-      mode === 'hard' ? "bg-red-950/20" : "",
-      mode === 'blinded' ? "bg-gray-900/90 justify-start" : "justify-center",
+      "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
+      mode === 'blinded' ? "justify-start" : "justify-center",
     )}>
       <div className={cn("w-full", mode === 'blinded' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 text-center">
