@@ -1,9 +1,10 @@
+
 import 'server-only';
 import { getAllPokemonWithDetails } from './pokedex';
 import type { Puzzle, Pokemon, JepokuMode } from './definitions';
 import { NORMAL_CRITERIA, HARD_CRITERIA, EASY_CRITERIA } from './criteria';
 
-const MAX_PUZZLE_ATTEMPTS = 5000;
+const MAX_PUZZLE_ATTEMPTS = 20000;
 
 const REGIONS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Alola', 'Galar', 'Paldea'];
 
@@ -119,40 +120,32 @@ function generateVisibilityMask(gridSize: number, visibleCount: number): boolean
 
         for (let i = 0; i < gridSize; i++) {
             let rowCount = indices.filter(c => mask[i][c]).length;
-            let colCount = indices.filter(r => mask[r][i]).length;
-            
             if (rowCount < visibleCount) {
                 isPerfect = false;
                 const hiddenCols = indices.filter(c => !mask[i][c]);
                 const colsToReveal = shuffle(hiddenCols).slice(0, visibleCount - rowCount);
                 colsToReveal.forEach(c => mask[i][c] = true);
-            }
-             if (colCount < visibleCount) {
-                isPerfect = false;
-                const hiddenRows = indices.filter(r => !mask[r][i]);
-                const rowsToReveal = shuffle(hiddenRows).slice(0, visibleCount - colCount);
-                rowsToReveal.forEach(r => mask[r][i] = true);
-            }
-        }
-        
-        for (let i = 0; i < gridSize; i++) {
-            let rowCount = indices.filter(c => mask[i][c]).length;
-            let colCount = indices.filter(r => mask[r][i]).length;
-
-            if (rowCount > visibleCount) {
+            } else if (rowCount > visibleCount) {
                 isPerfect = false;
                 const visibleCols = indices.filter(c => mask[i][c]);
                 const colsToHide = shuffle(visibleCols).slice(0, rowCount - visibleCount);
                 colsToHide.forEach(c => mask[i][c] = false);
             }
-            if (colCount > visibleCount) {
+            
+            let colCount = indices.filter(r => mask[r][i]).length;
+            if (colCount < visibleCount) {
+                isPerfect = false;
+                const hiddenRows = indices.filter(r => !mask[r][i]);
+                const rowsToReveal = shuffle(hiddenRows).slice(0, visibleCount - colCount);
+                rowsToReveal.forEach(r => mask[r][i] = true);
+            } else if (colCount > visibleCount) {
                 isPerfect = false;
                 const visibleRows = indices.filter(r => mask[r][i]);
                 const rowsToHide = shuffle(visibleRows).slice(0, colCount - visibleCount);
                 rowsToHide.forEach(r => mask[r][i] = false);
             }
         }
-
+        
         let finalCheck = true;
         for(let i = 0; i < gridSize; i++) {
             const rowCount = indices.filter(c => mask[i][c]).length;
@@ -344,6 +337,9 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         for (const coord of imposterCoords) {
             const rowCriterion = rowAnswers[coord.row];
             const colCriterion = colAnswers[coord.col];
+            const originalPokemonId = (grid[coord.row][coord.col] as Pokemon).id;
+            usedPokemonIds.delete(originalPokemonId);
+
 
             const imposterCandidates = shuffledPokemon.filter(p => {
                 if (usedPokemonIds.has(p.id)) return false;
@@ -357,6 +353,7 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
                 usedPokemonIds.add(chosenImposter.id);
             } else {
                 impostersPlaced = false;
+                usedPokemonIds.add(originalPokemonId); // add back if failed
                 break;
             }
         }
@@ -382,3 +379,5 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     }
     return createStandardPuzzle(mode);
 }
+
+    
