@@ -1,6 +1,7 @@
 
 
 
+
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
@@ -170,20 +171,24 @@ async function checkAnswers(
       isCorrect,
     };
 
-  } else if (mode === 'odd-one-out') {
-    const imposterCoordsSet = new Set(puzzle.oddOneOutCoords!.map(c => `${c.row},${c.col}`));
-    
+  } else if (mode === 'odd-one-out' || mode === 'imposter') {
     rowResults = rowGuesses.map((guess, r) => {
         if (!guess) return null;
+        // Find the column that contains the imposter for this row
         const imposterCol = puzzle.oddOneOutCoords!.find(c => c.row === r)!.col;
+        // Filter out the imposter, leaving the valid Pokemon for this row's criteria
         const validPokemon = puzzle.grid[r].filter((_, c) => c !== imposterCol);
+        // The guess is correct if it applies to all valid Pokemon in the row
         return validPokemon.every(p => p && getPokemonCriteria(p).has(guess));
     });
 
     colResults = colGuesses.map((guess, c) => {
         if (!guess) return null;
+        // Find the row that contains the imposter for this column
         const imposterRow = puzzle.oddOneOutCoords!.find(coord => coord.col === c)!.row;
+        // Filter out the imposter, leaving the valid Pokemon for this column's criteria
         const validPokemon = puzzle.grid.map(row => row[c]).filter((_, r) => r !== imposterRow);
+        // The guess is correct if it applies to all valid Pokemon in the column
         return validPokemon.every(p => p && getPokemonCriteria(p).has(guess));
     });
 
@@ -254,7 +259,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
       "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
       mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' ? "justify-start" : "justify-center",
     )}>
-      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' ? 'max-w-none' : 'max-w-7xl')}>
+      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'imposter' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
@@ -293,13 +298,13 @@ export default function HomePage({ searchParams }: HomePageProps) {
                  <DropdownMenuItem asChild>
                     <Link href="/?mode=miss-matched" className={cn(mode === 'miss-matched' && 'font-bold')}>Miss Matched</Link>
                 </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                    <Link href="/?mode=imposter" className={cn(mode === 'imposter' && 'font-bold')}>Imposter</Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
                 <DropdownMenuItem disabled>
                     Scarred Mode
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                    Imposter
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

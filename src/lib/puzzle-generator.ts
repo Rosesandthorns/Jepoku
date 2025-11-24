@@ -180,13 +180,14 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     }
 
     const isBlindedLike = mode === 'blinded' || mode === 'scarred';
-    const isHardLike = mode === 'hard' || mode === 'scarred';
+    const isHardLike = mode === 'hard' || mode === 'scarred' || mode === 'imposter';
     const gridSize = isBlindedLike ? 6 : 3;
 
     let criteriaPool: string[];
     switch (mode) {
         case 'hard':
         case 'scarred':
+        case 'imposter':
             criteriaPool = HARD_CRITERIA;
             break;
         case 'easy':
@@ -408,6 +409,70 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
     return null;
 }
 
+async function createImposterPuzzle(): Promise<Puzzle | null> {
+    const allPokemon = await getAllPokemonWithDetails();
+    if (!allPokemon.length) {
+        console.error("No Pokemon data available.");
+        return null;
+    }
+    
+    const gridSize = 3;
+
+    // 1. Generate a valid 3x3 hard mode puzzle
+    let basePuzzle: Puzzle | null = null;
+    for (let i = 0; i < 50; i++) { // Try a few times to get a base puzzle
+        const puzzle = await createStandardPuzzle('imposter'); // Uses hard criteria
+        if (puzzle && puzzle.grid.length === gridSize) {
+            basePuzzle = puzzle;
+            break;
+        }
+    }
+    if (!basePuzzle) {
+        console.error("Failed to create base puzzle for Imposter mode.");
+        return null;
+    }
+
+    const { grid, rowAnswers, colAnswers } = basePuzzle;
+    const usedPokemonIds = new Set(grid.flat().map(p => p.id));
+    
+    // 2. Select one random Pokémon to replace
+    const imposterRow = Math.floor(Math.random() * gridSize);
+    const imposterCol = Math.floor(Math.random() * gridSize);
+    const imposterCoord = { row: imposterRow, col: imposterCol };
+    
+    const originalPokemon = grid[imposterRow][imposterCol];
+    usedPokemonIds.delete(originalPokemon.id);
+
+    const rowCriterion = rowAnswers[imposterRow];
+    const colCriterion = colAnswers[imposterCol];
+
+    // 3. Find an imposter Pokémon
+    const shuffledPokemon = shuffle(allPokemon);
+    const imposterCandidate = shuffledPokemon.find(p => {
+        if (usedPokemonIds.has(p.id)) return false;
+        const pCriteria = getPokemonCriteria(p);
+        // Must not fit EITHER criterion
+        return !pCriteria.has(rowCriterion) && !pCriteria.has(colCriterion);
+    });
+
+    if (imposterCandidate) {
+        grid[imposterRow][imposterCol] = imposterCandidate;
+        return {
+            grid,
+            rowAnswers,
+            colAnswers,
+            mode: 'imposter',
+            oddOneOutCoords: [imposterCoord], // Store the single imposter
+        };
+    } else {
+         // This is unlikely but possible. We'll just return the solvable hard puzzle
+         // instead of failing outright. The user won't know the difference.
+         // Or we could retry. For now, let's retry.
+         return createImposterPuzzle();
+    }
+}
+
+
 async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
     const allPokemon = await getAllPokemonWithDetails();
     const gridSize = 3;
@@ -471,6 +536,8 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     switch (mode) {
         case 'odd-one-out':
             return createOddOneOutPuzzle();
+        case 'imposter':
+            return createImposterPuzzle();
         case 'miss-matched':
             return createMissMatchedPuzzle();
         case 'easy':

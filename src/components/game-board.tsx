@@ -72,8 +72,9 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   const gridSize = puzzle.grid.length;
   const isBlinded = mode === 'blinded';
   const isOddOneOut = mode === 'odd-one-out';
+  const isImposter = mode === 'imposter';
 
-  const criteriaPool = mode === 'hard' ? HARD_CRITERIA : mode === 'easy' ? EASY_CRITERIA : NORMAL_CRITERIA;
+  const criteriaPool = mode === 'hard' || mode === 'imposter' ? HARD_CRITERIA : mode === 'easy' ? EASY_CRITERIA : NORMAL_CRITERIA;
 
   useEffect(() => {
     const savedScore = localStorage.getItem('jepokuScore');
@@ -125,8 +126,12 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
       if (isSelected) {
         return prev.filter(coord => coord.row !== row || coord.col !== col);
       } else {
-        if (prev.length < gridSize) {
+        const maxImposters = isImposter ? 1 : gridSize;
+        if (prev.length < maxImposters) {
             return [...prev, {row, col}];
+        }
+        if (isImposter) { // If it's imposter mode and we're at the limit, swap selection
+            return [{row, col}];
         }
         return prev;
       }
@@ -144,7 +149,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   };
   
   const getOddOneOutTileClass = (row: number, col: number) => {
-    if (!isOddOneOut) return '';
+    if (!isOddOneOut && !isImposter) return '';
     const result = state.oddOneOutSelectionResults?.[row]?.[col];
     if (result === true) {
         return 'ring-4 ring-green-500';
@@ -162,7 +167,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
 
   return (
     <TooltipProvider>
-      <Card className={cn(isBlinded || isOddOneOut ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
+      <Card className={cn(isBlinded || isOddOneOut || isImposter ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
         <CardContent className="p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xl font-bold">
@@ -171,13 +176,15 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
             </div>
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className={cn(isBlinded || isOddOneOut ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
+                    <Button variant="ghost" size="icon" className={cn(isBlinded || isOddOneOut || isImposter ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
                         <HelpCircle className="h-6 w-6" />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                     {isOddOneOut 
                       ? <p>Guess criteria & click the 5 Pokémon that don't fit their row and column.</p>
+                      : isImposter
+                      ? <p>Guess criteria & click the single Pokémon that doesn't fit its row and column.</p>
                       : <p>Guess the common Pokemon trait for each row and column. Hold TAB to see answers.</p>
                     }
                 </TooltipContent>
@@ -185,8 +192,8 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
           </div>
           <form action={formAction} className="space-y-6">
              <input type="hidden" name="puzzle" value={JSON.stringify(puzzle)} />
-             {isOddOneOut && <input type="hidden" name="selectedImposters" value={JSON.stringify(selectedImposters)} />}
-            <div className={cn("grid items-center gap-2 sm:gap-4", isBlinded || isOddOneOut ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
+             {(isOddOneOut || isImposter) && <input type="hidden" name="selectedImposters" value={JSON.stringify(selectedImposters)} />}
+            <div className={cn("grid items-center gap-2 sm:gap-4", isBlinded || isOddOneOut || isImposter ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
               <div />
               <div className={cn("grid gap-2 sm:gap-4", `grid-cols-${gridSize}`)} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
                 {Array.from({ length: gridSize }).map((_, i) => (
@@ -195,7 +202,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                       <SelectTrigger className={cn(
                           'font-semibold', 
                           getSelectClass(state.colResults[i]),
-                          (isBlinded || isOddOneOut) ? 'text-black' : ''
+                          (isBlinded || isOddOneOut || isImposter) ? 'text-black' : ''
                         )}>
                         <SelectValue placeholder={showAnswers ? puzzle.colAnswers[i] : `Col ${i + 1}`} />
                       </SelectTrigger>
@@ -220,7 +227,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                       <SelectTrigger className={cn(
                         'w-28 font-semibold', 
                         getSelectClass(state.rowResults[i]),
-                         (isBlinded || isOddOneOut) ? 'text-black' : ''
+                         (isBlinded || isOddOneOut || isImposter) ? 'text-black' : ''
                         )}>
                         <SelectValue placeholder={showAnswers ? puzzle.rowAnswers[i] : `Row ${i + 1}`} />
                       </SelectTrigger>
@@ -254,7 +261,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                     <div 
                       key={pokemon?.id || i} 
                       className={cn("aspect-square w-full sm:w-24 md:w-28 lg:w-32 rounded-lg transition-all", getOddOneOutTileClass(row, col))}
-                      onClick={isOddOneOut ? () => handleImposterSelect(row, col) : undefined}
+                      onClick={(isOddOneOut || isImposter) ? () => handleImposterSelect(row, col) : undefined}
                     >
                       {pokemon ? (
                         isVisible ? (
@@ -288,9 +295,9 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
               </div>
             </div>
             
-            {isOddOneOut && !state.isCorrect && (
+            {(isOddOneOut || isImposter) && !state.isCorrect && (
                 <div className="text-center text-sm text-gray-400">
-                    <p>{selectedImposters.length} / {gridSize} imposters selected.</p>
+                    <p>{selectedImposters.length} / {isImposter ? 1 : gridSize} imposter{isImposter ? '' : 's'} selected.</p>
                 </div>
             )}
 
