@@ -105,8 +105,8 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
 function generateVisibilityMask(gridSize: number, visibleCount: number): boolean[][] {
     const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
     const indices = Array.from({ length: gridSize }, (_, i) => i);
-    
-    // 1. Start with a random valid-enough mask
+
+    // Initial random assignment
     for (let r = 0; r < gridSize; r++) {
         const visibleCols = shuffle(indices).slice(0, visibleCount);
         for (const c of visibleCols) {
@@ -114,54 +114,68 @@ function generateVisibilityMask(gridSize: number, visibleCount: number): boolean
         }
     }
 
-    // 2. Iteratively fix the mask until it's perfect
+    // Iteratively fix the mask
     let attempts = 0;
-    while (attempts < 100) { // Safety break
+    while (attempts < 200) { // Safety break
         let isPerfect = true;
 
-        // Check and fix columns
+        // Check and fix columns to have AT LEAST visibleCount
         for (let c = 0; c < gridSize; c++) {
-            let colVisibleCount = 0;
-            for (let r = 0; r < gridSize; r++) {
-                if (mask[r][c]) colVisibleCount++;
-            }
-
-            if (colVisibleCount > visibleCount) {
-                isPerfect = false;
-                const visibleRows = indices.filter(r => mask[r][c]);
-                const rowToHide = shuffle(visibleRows)[0];
-                mask[rowToHide][c] = false;
-            } else if (colVisibleCount < visibleCount) {
+            const colVisibleIndices = indices.filter(r => mask[r][c]);
+            if (colVisibleIndices.length < visibleCount) {
                 isPerfect = false;
                 const hiddenRows = indices.filter(r => !mask[r][c]);
-                const rowToReveal = shuffle(hiddenRows)[0];
-                mask[rowToReveal][c] = true;
+                const rowsToReveal = shuffle(hiddenRows).slice(0, visibleCount - colVisibleIndices.length);
+                rowsToReveal.forEach(r => mask[r][c] = true);
             }
         }
-
-        // Check and fix rows
+        
+        // Check and fix rows to have AT LEAST visibleCount
         for (let r = 0; r < gridSize; r++) {
-            let rowVisibleCount = 0;
-            for (let c = 0; c < gridSize; c++) {
-                if (mask[r][c]) rowVisibleCount++;
-            }
-
-            if (rowVisibleCount > visibleCount) {
-                isPerfect = false;
-                const visibleCols = indices.filter(c => mask[r][c]);
-                const colToHide = shuffle(visibleCols)[0];
-                mask[r][colToHide] = false;
-            } else if (rowVisibleCount < visibleCount) {
+            const rowVisibleIndices = indices.filter(c => mask[r][c]);
+            if (rowVisibleIndices.length < visibleCount) {
                 isPerfect = false;
                 const hiddenCols = indices.filter(c => !mask[r][c]);
-                const colToReveal = shuffle(hiddenCols)[0];
-                mask[r][colToReveal] = true;
+                const colsToReveal = shuffle(hiddenCols).slice(0, visibleCount - rowVisibleIndices.length);
+                colsToReveal.forEach(c => mask[r][c] = true);
             }
         }
 
-        if (isPerfect) {
+        // Shave down columns that have MORE than visibleCount
+        for (let c = 0; c < gridSize; c++) {
+            const colVisibleIndices = indices.filter(r => mask[r][c]);
+            if (colVisibleIndices.length > visibleCount) {
+                isPerfect = false;
+                const rowsToHide = shuffle(colVisibleIndices).slice(0, colVisibleIndices.length - visibleCount);
+                rowsToHide.forEach(r => mask[r][c] = false);
+            }
+        }
+
+        // Shave down rows that have MORE than visibleCount
+        for (let r = 0; r < gridSize; r++) {
+            const rowVisibleIndices = indices.filter(c => mask[r][c]);
+             if (rowVisibleIndices.length > visibleCount) {
+                isPerfect = false;
+                const colsToHide = shuffle(rowVisibleIndices).slice(0, rowVisibleIndices.length - visibleCount);
+                colsToHide.forEach(c => mask[r][c] = false);
+            }
+        }
+        
+        // Final check
+        let finalCheck = true;
+        for(let i = 0; i < gridSize; i++) {
+            const rowCount = indices.filter(c => mask[i][c]).length;
+            const colCount = indices.filter(r => mask[r][i]).length;
+            if (rowCount !== visibleCount || colCount !== visibleCount) {
+                finalCheck = false;
+                break;
+            }
+        }
+
+        if (finalCheck) {
             break;
         }
+        
         attempts++;
     }
 
@@ -181,23 +195,20 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     const shuffledPokemon = shuffle(allPokemon);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
-        const shuffledCriteria = shuffle([...criteriaPool]);
-        if (shuffledCriteria.length < gridSize * 2) return null;
-
         let rowAnswers: string[];
         let colAnswers: string[];
 
         if (mode === 'blinded') {
-            const useRegionsOnRows = Math.random() > 0.5;
-            const regionCriteria = shuffle(REGIONS).slice(0, gridSize);
-            const nonRegionCriteria = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
-            
-            if (useRegionsOnRows) {
-                rowAnswers = regionCriteria;
-                colAnswers = nonRegionCriteria.slice(0, gridSize);
+            const regionsCanBeInRows = Math.random() > 0.5;
+            const poolWithRegions = shuffle([...criteriaPool]);
+            const poolWithoutRegions = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
+
+            if (regionsCanBeInRows) {
+                rowAnswers = poolWithRegions.slice(0, gridSize);
+                colAnswers = poolWithoutRegions.slice(0, gridSize);
             } else {
-                colAnswers = regionCriteria;
-                rowAnswers = nonRegionCriteria.slice(0, gridSize);
+                rowAnswers = poolWithoutRegions.slice(0, gridSize);
+                colAnswers = poolWithRegions.slice(0, gridSize);
             }
 
             // Check for impossible type pairs
@@ -215,6 +226,8 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             if (impossiblePairFound) continue;
 
         } else {
+            const shuffledCriteria = shuffle([...criteriaPool]);
+             if (shuffledCriteria.length < gridSize * 2) return null;
             rowAnswers = shuffledCriteria.slice(0, gridSize);
             colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
         }
