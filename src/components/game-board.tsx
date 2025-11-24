@@ -150,7 +150,11 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 {Array.from({ length: gridSize }).map((_, i) => (
                   <div key={`col-input-${i}`} className="relative">
                     <Select name={`col-${i}`} disabled={state.isCorrect}>
-                      <SelectTrigger className={cn('font-semibold', getSelectClass(state.colResults[i]))}>
+                      <SelectTrigger className={cn(
+                          'font-semibold', 
+                          getSelectClass(state.colResults[i]),
+                          isBlinded ? 'text-black' : ''
+                        )}>
                         <SelectValue placeholder={showAnswers ? puzzle.colAnswers[i] : `Col ${i + 1}`} />
                       </SelectTrigger>
                       <SelectContent>
@@ -171,7 +175,11 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 {Array.from({ length: gridSize }).map((_, i) => (
                   <div key={`row-input-${i}`} className="relative flex items-center h-full">
                     <Select name={`row-${i}`} disabled={state.isCorrect}>
-                      <SelectTrigger className={cn('w-28 font-semibold', getSelectClass(state.rowResults[i]))}>
+                      <SelectTrigger className={cn(
+                        'w-28 font-semibold', 
+                        getSelectClass(state.rowResults[i]),
+                        isBlinded ? 'text-black' : ''
+                        )}>
                         <SelectValue placeholder={showAnswers ? puzzle.rowAnswers[i] : `Row ${i + 1}`} />
                       </SelectTrigger>
                       <SelectContent>

@@ -105,8 +105,8 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
 function generateVisibilityMask(gridSize: number, visibleCount: number): boolean[][] {
     const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
     const indices = Array.from({ length: gridSize }, (_, i) => i);
-
-    // Ensure each row has `visibleCount` visible cells
+    
+    // 1. Start with a random valid-enough mask
     for (let r = 0; r < gridSize; r++) {
         const visibleCols = shuffle(indices).slice(0, visibleCount);
         for (const c of visibleCols) {
@@ -114,59 +114,55 @@ function generateVisibilityMask(gridSize: number, visibleCount: number): boolean
         }
     }
 
-    // Check and adjust columns
-    for (let c = 0; c < gridSize; c++) {
-        let colVisibleCount = 0;
+    // 2. Iteratively fix the mask until it's perfect
+    let attempts = 0;
+    while (attempts < 100) { // Safety break
+        let isPerfect = true;
+
+        // Check and fix columns
+        for (let c = 0; c < gridSize; c++) {
+            let colVisibleCount = 0;
+            for (let r = 0; r < gridSize; r++) {
+                if (mask[r][c]) colVisibleCount++;
+            }
+
+            if (colVisibleCount > visibleCount) {
+                isPerfect = false;
+                const visibleRows = indices.filter(r => mask[r][c]);
+                const rowToHide = shuffle(visibleRows)[0];
+                mask[rowToHide][c] = false;
+            } else if (colVisibleCount < visibleCount) {
+                isPerfect = false;
+                const hiddenRows = indices.filter(r => !mask[r][c]);
+                const rowToReveal = shuffle(hiddenRows)[0];
+                mask[rowToReveal][c] = true;
+            }
+        }
+
+        // Check and fix rows
         for (let r = 0; r < gridSize; r++) {
-            if (mask[r][c]) {
-                colVisibleCount++;
+            let rowVisibleCount = 0;
+            for (let c = 0; c < gridSize; c++) {
+                if (mask[r][c]) rowVisibleCount++;
+            }
+
+            if (rowVisibleCount > visibleCount) {
+                isPerfect = false;
+                const visibleCols = indices.filter(c => mask[r][c]);
+                const colToHide = shuffle(visibleCols)[0];
+                mask[r][colToHide] = false;
+            } else if (rowVisibleCount < visibleCount) {
+                isPerfect = false;
+                const hiddenCols = indices.filter(c => !mask[r][c]);
+                const colToReveal = shuffle(hiddenCols)[0];
+                mask[r][colToReveal] = true;
             }
         }
 
-        // If a column has too few visible cells, add more
-        if (colVisibleCount < visibleCount) {
-            const deficit = visibleCount - colVisibleCount;
-            const hiddenRows = indices.filter(r => !mask[r][c]);
-            const rowsToReveal = shuffle(hiddenRows).slice(0, deficit);
-            for (const r of rowsToReveal) {
-                mask[r][c] = true;
-            }
+        if (isPerfect) {
+            break;
         }
-        // If a column has too many, hide some (this part is tricky)
-        else if (colVisibleCount > visibleCount) {
-            const surplus = colVisibleCount - visibleCount;
-            const visibleRows = indices.filter(r => mask[r][c]);
-            
-            // Find rows that can afford to lose a visible cell
-            const candidatesForHiding = visibleRows.filter(r => {
-                const rowVisibleCount = mask[r].filter(Boolean).length;
-                return rowVisibleCount > visibleCount;
-            });
-            
-            const rowsToHide = shuffle(candidatesForHiding).slice(0, surplus);
-            for (const r of rowsToHide) {
-                mask[r][c] = false;
-            }
-        }
-    }
-    
-    // Final check to enforce row counts, as column adjustments might have changed them
-     for (let r = 0; r < gridSize; r++) {
-        let rowVisibleCount = mask[r].filter(Boolean).length;
-        if (rowVisibleCount > visibleCount) {
-            const surplus = rowVisibleCount - visibleCount;
-            const visibleCols = indices.filter(c => mask[r][c]);
-
-            const candidatesForHiding = visibleCols.filter(c => {
-                const colVisibleCount = mask.map(row => row[c]).filter(Boolean).length;
-                return colVisibleCount > visibleCount;
-            });
-
-            const colsToHide = shuffle(candidatesForHiding).slice(0, surplus);
-            for (const c of colsToHide) {
-                mask[r][c] = false;
-            }
-        }
+        attempts++;
     }
 
     return mask;
@@ -205,14 +201,11 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             }
 
             // Check for impossible type pairs
-            const rowTypes = rowAnswers.map(c => c.split(' ')[0]);
-            const colTypes = colAnswers.map(c => c.split(' ')[0]);
             let impossiblePairFound = false;
-            for (const rType of rowTypes) {
-                for (const cType of colTypes) {
-                     const pair1 = `${rType}/${cType}`;
-                     const pair2 = `${cType}/${rType}`;
-                     if (IMPOSSIBLE_TYPE_PAIRS.some(p => `${p[0]}/${p[1]}` === pair1 || `${p[0]}/${p[1]}` === pair2)) {
+            for (const rAnswer of rowAnswers) {
+                for (const cAnswer of colAnswers) {
+                     const pair: [string, string] = [rAnswer, cAnswer].sort() as [string, string];
+                     if (IMPOSSIBLE_TYPE_PAIRS.some(p => p[0] === pair[0] && p[1] === pair[1])) {
                         impossiblePairFound = true;
                         break;
                     }
