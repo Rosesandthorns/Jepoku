@@ -15,6 +15,8 @@ export interface Pokemon {
   isMythical: boolean;
   isUltraBeast: boolean;
   isParadox: boolean;
+  height: number;
+  weight: number;
   stats: {
     hp: number;
     attack: number;
@@ -25,7 +27,9 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'scarred' | 'miss-matched' | 'timer';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'scarred' | 'miss-matched' | 'timer' | 'order';
+
+export type OrderBy = 'pokedex' | 'height' | 'weight' | 'bst' | 'hp' | 'attack' | 'defense' | 'special-attack' | 'special-defense' | 'speed';
 
 export interface Puzzle {
   grid: (Pokemon | null)[][];
@@ -43,6 +47,12 @@ export interface Puzzle {
     value: string;
   };
   solutionGrid?: (Pokemon | null)[][];
+
+  // For Order mode
+  pokemonList?: Pokemon[];
+  orderBy?: OrderBy;
+  orderDirection?: 'asc' | 'desc';
+  correctOrderIds?: number[];
 }
 
 export interface ValidationResult {
@@ -57,4 +67,7 @@ export interface ValidationResult {
   
   // For Miss-matched
   isPlacementCorrect?: boolean;
+
+  // For Order mode
+  accuracy?: number;
 }

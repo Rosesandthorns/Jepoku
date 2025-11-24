@@ -50,6 +50,8 @@ interface PokeApiPokemon {
   moves: PokeApiMove[];
   species: PokeApiResource;
   stats: PokeApiStat[];
+  height: number;
+  weight: number;
 }
 
 interface PokeApiSpecies {
@@ -201,6 +203,8 @@ export const getAllPokemonWithDetails = unstable_cache(
             isMythical: speciesData.is_mythical,
             isUltraBeast,
             isParadox,
+            height: pokemonData.height,
+            weight: pokemonData.weight,
             stats,
           };
         } catch (e) {
@@ -216,6 +220,6 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen9-hard-mode'],
+  ['all-pokemon-with-details-gen9-hard-mode-v2'], // version bump for height/weight
   { revalidate: 3600 * 24 } // Revalidate once a day
 );

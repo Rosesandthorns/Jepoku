@@ -32,6 +32,11 @@ This document provides a brief overview of each game mode available in Jepoku.
 - **Mechanic**: The grid is much larger, and only a fraction of the Pokémon are visible. You must deduce the criteria based on the limited information you have.
 - **Goal**: Guess the common trait for each of the 6 rows and 6 columns.
 
+### Order Mode
+- **Grid Size**: 16 Pokémon in a list
+- **Criteria**: Players are asked to sort the 16 Pokémon based on a specific criterion like Pokedex Number, Height, Weight, or a base stat (HP, Speed, etc.).
+- **Goal**: Drag and drop the Pokémon into the correct order. A score of 80% accuracy or higher is a pass.
+
 ### Odd One Out
 - **Grid Size**: 5x5
 - **Criteria**: Uses the "Normal Mode" criteria set.

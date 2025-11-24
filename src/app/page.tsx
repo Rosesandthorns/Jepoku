@@ -3,6 +3,7 @@
 
 
 
+
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Menu } from 'lucide-react';
+import { lcs } from '@/lib/lcs';
 
 export const revalidate = 0;
 
@@ -116,6 +118,22 @@ async function checkAnswers(
   const puzzle: Puzzle = JSON.parse(puzzleString);
   const gridSize = puzzle.grid.length;
   const mode = puzzle.mode;
+
+  if (mode === 'order') {
+    const playerOrderString = formData.get('playerOrder') as string;
+    const playerOrderIds: number[] = JSON.parse(playerOrderString);
+    const correctOrderIds = puzzle.correctOrderIds!;
+    const accuracy = lcs(playerOrderIds, correctOrderIds) / correctOrderIds.length;
+    const isCorrect = accuracy >= 0.8;
+
+    return {
+        rowResults: [],
+        colResults: [],
+        isCriteriaCorrect: false,
+        isCorrect,
+        accuracy,
+    };
+  }
 
   const rowGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`row-${i}`) as string);
   const colGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`col-${i}`) as string);
@@ -225,7 +243,7 @@ async function checkAnswers(
       isCorrect,
     };
 
-  } else { // Normal, Hard, Easy, Blinded, Scarred
+  } else { // Normal, Hard, Easy, Blinded
     rowResults = rowGuesses.map((guess, index) => guess ? guess === puzzle.rowAnswers[index] : null);
     colResults = colGuesses.map((guess, index) => guess ? guess === puzzle.colAnswers[index] : null);
     isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);
@@ -252,17 +270,17 @@ export default function HomePage({ searchParams }: HomePageProps) {
     (modeParam === 'easy' ? 'easy' : 
     (modeParam === 'odd-one-out' ? 'odd-one-out' : 
     (modeParam === 'imposter' ? 'imposter' : 
-    (modeParam === 'scarred' ? 'scarred' :
     (modeParam === 'miss-matched' ? 'miss-matched' : 
-    (modeParam === 'timer' ? 'timer' : 'normal')))))));
+    (modeParam === 'timer' ? 'timer' : 
+    (modeParam === 'order' ? 'order' : 'normal')))))));
 
 
   return (
     <main className={cn(
       "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
-      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'timer' ? "justify-start" : "justify-center",
+      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'timer' || mode === 'order' ? "justify-start" : "justify-center",
     )}>
-      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'imposter' || mode === 'timer' ? 'max-w-none' : 'max-w-7xl')}>
+      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'imposter' || mode === 'timer' || mode === 'order' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
@@ -297,6 +315,9 @@ export default function HomePage({ searchParams }: HomePageProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/?mode=blinded" className={cn(mode === 'blinded' && 'font-bold')}>Blinded Mode</Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                    <Link href="/?mode=order" className={cn(mode === 'order' && 'font-bold')}>Order Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/?mode=odd-one-out" className={cn(mode === 'odd-one-out' && 'font-bold')}>Odd one out</Link>

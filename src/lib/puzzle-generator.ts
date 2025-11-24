@@ -1,7 +1,7 @@
 
 import 'server-only';
 import { getAllPokemonWithDetails } from './pokedex';
-import type { Puzzle, Pokemon, JepokuMode } from './definitions';
+import type { Puzzle, Pokemon, JepokuMode, OrderBy } from './definitions';
 import { NORMAL_CRITERIA, HARD_CRITERIA, EASY_CRITERIA } from './criteria';
 
 const MAX_PUZZLE_ATTEMPTS = 20000;
@@ -179,14 +179,13 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         return null;
     }
 
-    const isBlindedLike = mode === 'blinded' || mode === 'scarred';
-    const isHardLike = mode === 'hard' || mode === 'scarred' || mode === 'imposter';
+    const isBlindedLike = mode === 'blinded';
+    const isHardLike = mode === 'hard' || mode === 'imposter';
     const gridSize = isBlindedLike ? 6 : 3;
 
     let criteriaPool: string[];
     switch (mode) {
         case 'hard':
-        case 'scarred':
         case 'imposter':
             criteriaPool = [...HARD_CRITERIA, ...NORMAL_CRITERIA];
             break;
@@ -532,6 +531,58 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
     };
 }
 
+async function createOrderPuzzle(): Promise<Puzzle | null> {
+    const allPokemon = await getAllPokemonWithDetails();
+    const pokemonCount = 16;
+    const shuffledPokemon = shuffle([...allPokemon]);
+    const pokemonList = shuffledPokemon.slice(0, pokemonCount);
+
+    const orderByOptions: OrderBy[] = [
+        'pokedex', 'height', 'weight', 'bst', 'hp', 'attack', 
+        'defense', 'special-attack', 'special-defense', 'speed'
+    ];
+    const orderBy = shuffle(orderByOptions)[0];
+    const orderDirection = Math.random() > 0.5 ? 'asc' : 'desc';
+
+    const getStat = (p: Pokemon, stat: OrderBy) => {
+        switch (stat) {
+            case 'pokedex': return p.id;
+            case 'height': return p.height;
+            case 'weight': return p.weight;
+            case 'hp': return p.stats.hp;
+            case 'attack': return p.stats.attack;
+            case 'defense': return p.stats.defense;
+            case 'special-attack': return p.stats.specialAttack;
+            case 'special-defense': return p.stats.specialDefense;
+            case 'speed': return p.stats.speed;
+            case 'bst': return Object.values(p.stats).reduce((a, b) => a + b, 0);
+        }
+    };
+
+    const sortedPokemon = [...pokemonList].sort((a, b) => {
+        const statA = getStat(a, orderBy);
+        const statB = getStat(b, orderBy);
+        if (orderDirection === 'asc') {
+            return statA - statB;
+        } else {
+            return statB - statA;
+        }
+    });
+
+    const correctOrderIds = sortedPokemon.map(p => p.id);
+
+    return {
+        grid: [],
+        rowAnswers: [],
+        colAnswers: [],
+        mode: 'order',
+        pokemonList: shuffle(pokemonList), // Present in random order
+        orderBy,
+        orderDirection,
+        correctOrderIds,
+    };
+}
+
 
 export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     switch (mode) {
@@ -541,11 +592,12 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             return createImposterPuzzle();
         case 'miss-matched':
             return createMissMatchedPuzzle();
+        case 'order':
+            return createOrderPuzzle();
         case 'easy':
         case 'normal':
         case 'hard':
         case 'blinded':
-        case 'scarred':
         case 'timer':
             return createStandardPuzzle(mode);
         default:

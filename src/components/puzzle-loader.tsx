@@ -6,6 +6,7 @@ import type { Puzzle, ValidationResult, JepokuMode } from '@/lib/definitions';
 import { GameBoard } from '@/components/game-board';
 import { MissMatchedBoard } from '@/components/miss-matched-board';
 import { TimerModeBoard } from '@/components/timer-mode-board';
+import { OrderModeBoard } from '@/components/order-mode-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -14,6 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 interface PuzzleLoaderProps {
   getPuzzleAction: (mode: JepokuMode) => Promise<Puzzle | null>;
@@ -69,6 +72,14 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
   
   if (mode === 'miss-matched') {
     return <MissMatchedBoard puzzle={puzzle} checkAnswersAction={checkAnswersAction} mode={mode} />;
+  }
+
+  if (mode === 'order') {
+    return (
+      <DndProvider backend={HTML5Backend}>
+        <OrderModeBoard puzzle={puzzle} checkAnswersAction={checkAnswersAction} mode={mode} />
+      </DndProvider>
+    );
   }
 
   return (
