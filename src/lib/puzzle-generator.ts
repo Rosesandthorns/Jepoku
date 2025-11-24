@@ -114,53 +114,59 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
     return criteria;
 }
 
-function generateVisibilityMask(gridSize: number, visibleCount: number): boolean[][] {
+function generateVisibilityMask(gridSize: number): boolean[][] {
     const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
-    let indices = Array.from({ length: gridSize }, (_, i) => i);
+    const indices = Array.from({ length: gridSize }, (_, i) => i);
+    const visibleCount = 3;
 
-    // Initial population, aiming for `visibleCount` in each row
-    for(let r=0; r<gridSize; r++) {
-        const visibleCols = shuffle(indices).slice(0, visibleCount);
-        for(const c of visibleCols) {
+    // Initial random population
+    for (let r = 0; r < gridSize; r++) {
+        const visibleCols = shuffle([...indices]).slice(0, visibleCount);
+        for (const c of visibleCols) {
             mask[r][c] = true;
         }
     }
-    
-    // Iteratively balance the grid, this is a brute-force approach
-    for (let i = 0; i < 50; i++) { // Limit iterations to prevent infinite loops
-        let changed = false;
 
-        // Balance columns
-        for(let c=0; c<gridSize; c++) {
-            const visibleInCol = indices.filter(r => mask[r][c]);
-            const diff = visibleInCol.length - visibleCount;
-            if (diff > 0) { // too many visible
-                const toHide = shuffle(visibleInCol).slice(0, diff);
-                toHide.forEach(r => { mask[r][c] = false; changed=true; });
-            } else if (diff < 0) { // too few visible
-                const hiddenInCol = indices.filter(r => !mask[r][c]);
-                const toShow = shuffle(hiddenInCol).slice(0, -diff);
-                toShow.forEach(r => { mask[r][c] = true; changed=true; });
+    // Iteratively balance the grid
+    for (let i = 0; i < 50; i++) { // Safety break after 50 iterations
+        let changesMade = false;
+
+        // Check and fix columns
+        for (let c = 0; c < gridSize; c++) {
+            const col = mask.map(row => row[c]);
+            const count = col.filter(v => v).length;
+            if (count > visibleCount) {
+                const visibleRows = indices.filter(r => mask[r][c]);
+                const toHide = shuffle(visibleRows)[0];
+                mask[toHide][c] = false;
+                changesMade = true;
+            } else if (count < visibleCount) {
+                const hiddenRows = indices.filter(r => !mask[r][c]);
+                const toShow = shuffle(hiddenRows)[0];
+                mask[toShow][c] = true;
+                changesMade = true;
             }
         }
         
-        // Balance rows
-         for(let r=0; r<gridSize; r++) {
-            const visibleInRow = indices.filter(c => mask[r][c]);
-            const diff = visibleInRow.length - visibleCount;
-            if (diff > 0) { // too many visible
-                const toHide = shuffle(visibleInRow).slice(0, diff);
-                toHide.forEach(c => { mask[r][c] = false; changed=true; });
-            } else if (diff < 0) { // too few visible
-                const hiddenInRow = indices.filter(c => !mask[r][c]);
-                const toShow = shuffle(hiddenInRow).slice(0, -diff);
-                toShow.forEach(c => { mask[r][c] = true; changed=true; });
+        // Check and fix rows
+        for (let r = 0; r < gridSize; r++) {
+            const row = mask[r];
+            const count = row.filter(v => v).length;
+             if (count > visibleCount) {
+                const visibleCols = indices.filter(c => mask[r][c]);
+                const toHide = shuffle(visibleCols)[0];
+                mask[r][toHide] = false;
+                changesMade = true;
+            } else if (count < visibleCount) {
+                const hiddenCols = indices.filter(c => !mask[r][c]);
+                const toShow = shuffle(hiddenCols)[0];
+                mask[r][toShow] = true;
+                changesMade = true;
             }
         }
 
-        if (!changed) break; // If a full pass makes no changes, we're stable.
+        if (!changesMade) break; // If a full pass makes no changes, we're stable.
     }
-
 
     return mask;
 }
@@ -207,10 +213,8 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 const selected = shuffle(availableCriteria)[0];
                 allSelected.push(selected);
                 
-                // Remove selected from pool
                 availableCriteria = availableCriteria.filter(c => c !== selected);
 
-                // If selected is part of a pair, remove its opposite
                 const opposingPair = OPPOSING_HARD_CRITERIA.find(p => p.includes(selected));
                 if (opposingPair) {
                     const opposite = opposingPair.find(p => p !== selected);
@@ -218,14 +222,14 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 }
             }
 
-            if (allSelected.length < gridSize * 2) continue; // Not enough unique criteria
+            if (allSelected.length < gridSize * 2) continue; 
 
             rowAnswers = allSelected.slice(0, gridSize);
             colAnswers = allSelected.slice(gridSize, gridSize * 2);
 
-        } else if (isBlindedLike) { 
+        } else if (isBlindedLike) {
             const regionsCanBeInRows = Math.random() > 0.5;
-            const poolWithRegions = shuffle([...criteriaPool]);
+            const poolWithRegions = shuffle(criteriaPool.filter(c => !REGIONS.includes(c) || Math.random() > 0.4));
             const poolWithoutRegions = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
 
             if (regionsCanBeInRows) {
@@ -236,7 +240,6 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 colAnswers = poolWithRegions.slice(0, gridSize);
             }
 
-            // Check for impossible type pairs
             let impossiblePairFound = false;
             for (const rAnswer of rowAnswers) {
                 for (const cAnswer of colAnswers) {
@@ -249,7 +252,7 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 if (impossiblePairFound) break;
             }
             if (impossiblePairFound) continue;
-        } else { // For 'normal', 'easy'
+        } else {
             const shuffledCriteria = shuffle([...criteriaPool]);
             if (shuffledCriteria.length < gridSize * 2) return null;
             rowAnswers = shuffledCriteria.slice(0, gridSize);
@@ -298,7 +301,7 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             };
 
             if (isBlindedLike) {
-                puzzle.visibleMask = generateVisibilityMask(gridSize, 3);
+                puzzle.visibleMask = generateVisibilityMask(gridSize);
             }
 
             return puzzle;
@@ -405,10 +408,78 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
     return null;
 }
 
+async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
+    const allPokemon = await getAllPokemonWithDetails();
+    const gridSize = 3;
+
+    // 1. Generate a valid, solvable 3x3 puzzle
+    let solvedPuzzle: Puzzle | null = null;
+    for (let i = 0; i < 100; i++) { // Try up to 100 times to create a base puzzle
+      const puzzle = await createStandardPuzzle('normal');
+      if (puzzle && puzzle.grid.length === gridSize) {
+        solvedPuzzle = puzzle;
+        break;
+      }
+    }
+    
+    if (!solvedPuzzle) {
+        console.error("Failed to generate a base puzzle for Miss Matched mode.");
+        return null;
+    }
+    const solutionGrid = solvedPuzzle.grid as Pokemon[][];
+
+    // 2. Reveal one random criterion
+    const revealedAxis = Math.random() < 0.5 ? 'row' : 'col';
+    const revealedIndex = Math.floor(Math.random() * gridSize);
+    const revealedValue = revealedAxis === 'row' ? solvedPuzzle.rowAnswers[revealedIndex] : solvedPuzzle.colAnswers[revealedIndex];
+
+    // 3. Create the shuffled grid
+    const pokemonToShuffle = solutionGrid.flat();
+    const emptyIndex = Math.floor(Math.random() * (gridSize * gridSize));
+    
+    // Remove one Pokémon to create an empty slot
+    const pokemonForGrid = pokemonToShuffle.filter((_, i) => i !== emptyIndex);
+    const shuffledPokemon = shuffle(pokemonForGrid);
+    
+    const shuffledGrid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+    let currentPokeIndex = 0;
+    for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+            if (r * gridSize + c !== emptyIndex) {
+                shuffledGrid[r][c] = shuffledPokemon[currentPokeIndex++];
+            }
+        }
+    }
+
+    return {
+        grid: solvedPuzzle.grid,
+        rowAnswers: solvedPuzzle.rowAnswers,
+        colAnswers: solvedPuzzle.colAnswers,
+        mode: 'miss-matched',
+        shuffledGrid,
+        solutionGrid,
+        revealedCriterion: {
+            axis: revealedAxis,
+            index: revealedIndex,
+            value: revealedValue,
+        },
+    };
+}
+
 
 export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
-    if (mode === 'odd-one-out') {
-        return createOddOneOutPuzzle();
+    switch (mode) {
+        case 'odd-one-out':
+            return createOddOneOutPuzzle();
+        case 'miss-matched':
+            return createMissMatchedPuzzle();
+        case 'easy':
+        case 'normal':
+        case 'hard':
+        case 'blinded':
+        case 'scarred':
+            return createStandardPuzzle(mode);
+        default:
+            return createStandardPuzzle('normal');
     }
-    return createStandardPuzzle(mode);
 }

@@ -29,7 +29,7 @@ export default function RootLayout({
       <body className={cn(
         "font-body antialiased transition-colors duration-500",
         mode === 'hard' ? "bg-red-950/20" : "",
-        mode === 'blinded' || mode === 'scarred' ? "bg-gray-900/90" : "",
+        mode === 'blinded' || mode === 'scarred' || mode === 'miss-matched' ? "bg-gray-900/90" : "",
       )}>
         {children}
         <Toaster />

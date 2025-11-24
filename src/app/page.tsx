@@ -1,5 +1,6 @@
 
 
+
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
@@ -105,8 +106,6 @@ async function checkAnswers(
         rowResults: [],
         colResults: [],
         isCriteriaCorrect: false,
-        oddOneOutSelectionResults: [],
-        isOddOneOutSelectionCorrect: false,
         isCorrect: false,
     };
   }
@@ -120,8 +119,58 @@ async function checkAnswers(
 
   let rowResults: (boolean | null)[] = [];
   let colResults: (boolean | null)[] = [];
+  let isCriteriaCorrect = false;
+  let isPlacementCorrect = false;
+  let isOddOneOutSelectionCorrect = false;
+  let isCorrect = false;
 
-  if (mode === 'odd-one-out') {
+  if (mode === 'miss-matched') {
+    const playerGridString = formData.get('playerGrid') as string;
+    const playerGrid: (Pokemon | null)[][] = JSON.parse(playerGridString);
+    
+    isPlacementCorrect = true;
+    for(let r=0; r < gridSize; r++) {
+      for (let c=0; c < gridSize; c++) {
+        const playerMon = playerGrid[r][c];
+        if (playerMon) {
+          const pCriteria = getPokemonCriteria(playerMon);
+          if (!pCriteria.has(rowGuesses[r]) || !pCriteria.has(colGuesses[c])) {
+            isPlacementCorrect = false;
+            break;
+          }
+        }
+      }
+      if (!isPlacementCorrect) break;
+    }
+
+    rowResults = rowGuesses.map((guess, index) => {
+        if (!guess) return null;
+        if (puzzle.revealedCriterion?.axis === 'row' && puzzle.revealedCriterion.index === index) {
+            return guess === puzzle.revealedCriterion.value;
+        }
+        return puzzle.rowAnswers[index] === guess;
+    });
+
+    colResults = colGuesses.map((guess, index) => {
+        if (!guess) return null;
+        if (puzzle.revealedCriterion?.axis === 'col' && puzzle.revealedCriterion.index === index) {
+            return guess === puzzle.revealedCriterion.value;
+        }
+        return puzzle.colAnswers[index] === guess;
+    });
+
+    isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);
+    isCorrect = isCriteriaCorrect && isPlacementCorrect;
+
+    return {
+      rowResults,
+      colResults,
+      isCriteriaCorrect,
+      isPlacementCorrect,
+      isCorrect,
+    };
+
+  } else if (mode === 'odd-one-out') {
     const imposterCoordsSet = new Set(puzzle.oddOneOutCoords!.map(c => `${c.row},${c.col}`));
     
     rowResults = rowGuesses.map((guess, r) => {
@@ -138,48 +187,50 @@ async function checkAnswers(
         return validPokemon.every(p => p && getPokemonCriteria(p).has(guess));
     });
 
-  } else {
+    isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);
+
+    const selectedImposters = JSON.parse(formData.get('selectedImposters') as string) as {row: number, col: number}[];
+    const correctImposterCoords = new Set(puzzle.oddOneOutCoords!.map(coord => `${coord.row},${coord.col}`));
+    const selectedImposterCoords = new Set(selectedImposters.map(coord => `${coord.row},${coord.col}`));
+    
+    isOddOneOutSelectionCorrect = correctImposterCoords.size === selectedImposterCoords.size &&
+                                   [...correctImposterCoords].every(coord => selectedImposterCoords.has(coord));
+
+    let oddOneOutSelectionResults: (boolean | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+    for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+            const isSelected = selectedImposterCoords.has(`${r},${c}`);
+            const isCorrectImposter = correctImposterCoords.has(`${r},${c}`);
+            if(isSelected) {
+              oddOneOutSelectionResults[r][c] = isCorrectImposter;
+            }
+        }
+    }
+    
+    isCorrect = isCriteriaCorrect && isOddOneOutSelectionCorrect;
+
+    return {
+      rowResults,
+      colResults,
+      isCriteriaCorrect,
+      oddOneOutSelectionResults,
+      isOddOneOutSelectionCorrect,
+      isCorrect,
+    };
+
+  } else { // Normal, Hard, Easy, Blinded, Scarred
     rowResults = rowGuesses.map((guess, index) => guess ? guess === puzzle.rowAnswers[index] : null);
     colResults = colGuesses.map((guess, index) => guess ? guess === puzzle.colAnswers[index] : null);
+    isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);
+    isCorrect = isCriteriaCorrect;
+
+    return {
+      rowResults,
+      colResults,
+      isCriteriaCorrect,
+      isCorrect,
+    };
   }
-
-  const isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);
-  
-  let isOddOneOutSelectionCorrect = false;
-  let oddOneOutSelectionResults: (boolean | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
-
-  if (mode === 'odd-one-out') {
-      const selectedImposters = JSON.parse(formData.get('selectedImposters') as string) as {row: number, col: number}[];
-      
-      const correctImposterCoords = new Set(puzzle.oddOneOutCoords!.map(coord => `${coord.row},${coord.col}`));
-      const selectedImposterCoords = new Set(selectedImposters.map(coord => `${coord.row},${coord.col}`));
-      
-      isOddOneOutSelectionCorrect = correctImposterCoords.size === selectedImposterCoords.size &&
-                                     [...correctImposterCoords].every(coord => selectedImposterCoords.has(coord));
-
-      for (let r = 0; r < gridSize; r++) {
-          for (let c = 0; c < gridSize; c++) {
-              const isSelected = selectedImposterCoords.has(`${r},${c}`);
-              const isCorrectImposter = correctImposterCoords.has(`${r},${c}`);
-              if(isSelected) {
-                oddOneOutSelectionResults[r][c] = isCorrectImposter;
-              }
-          }
-      }
-  } else {
-    isOddOneOutSelectionCorrect = true; // Not applicable for other modes
-  }
-
-  const isCorrect = isCriteriaCorrect && isOddOneOutSelectionCorrect;
-
-  return {
-    rowResults,
-    colResults,
-    isCriteriaCorrect,
-    oddOneOutSelectionResults,
-    isOddOneOutSelectionCorrect,
-    isCorrect,
-  };
 }
 
 interface HomePageProps {
@@ -194,15 +245,16 @@ export default function HomePage({ searchParams }: HomePageProps) {
     (modeParam === 'easy' ? 'easy' : 
     (modeParam === 'odd-one-out' ? 'odd-one-out' : 
     (modeParam === 'imposter' ? 'imposter' : 
-    (modeParam === 'scarred' ? 'scarred' : 'normal')))));
+    (modeParam === 'scarred' ? 'scarred' :
+    (modeParam === 'miss-matched' ? 'miss-matched' : 'normal'))))));
 
 
   return (
     <main className={cn(
       "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
-      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' ? "justify-start" : "justify-center",
+      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' ? "justify-start" : "justify-center",
     )}>
-      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' ? 'max-w-none' : 'max-w-7xl')}>
+      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
@@ -237,6 +289,9 @@ export default function HomePage({ searchParams }: HomePageProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/?mode=odd-one-out" className={cn(mode === 'odd-one-out' && 'font-bold')}>Odd one out</Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                    <Link href="/?mode=miss-matched" className={cn(mode === 'miss-matched' && 'font-bold')}>Miss Matched</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>

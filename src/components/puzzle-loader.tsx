@@ -4,6 +4,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import type { Puzzle, ValidationResult, JepokuMode } from '@/lib/definitions';
 import { GameBoard } from '@/components/game-board';
+import { MissMatchedBoard } from '@/components/miss-matched-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -55,6 +56,10 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
           </CardContent>
         </Card>
     );
+  }
+  
+  if (mode === 'miss-matched') {
+    return <MissMatchedBoard puzzle={puzzle} checkAnswersAction={checkAnswersAction} mode={mode} />;
   }
 
   return (
