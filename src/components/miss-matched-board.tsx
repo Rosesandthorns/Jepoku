@@ -63,7 +63,7 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
   
   const [playerGrid, setPlayerGrid] = useState<(Pokemon | null)[][]>(puzzle.shuffledGrid!);
   
-  const initialEmptySlot = useMemo(() => {
+  const findInitialEmptySlot = () => {
     if (!puzzle.shuffledGrid) return { row: -1, col: -1 };
     for (let r = 0; r < puzzle.shuffledGrid.length; r++) {
         for (let c = 0; c < puzzle.shuffledGrid[r].length; c++) {
@@ -71,9 +71,9 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
         }
     }
     return { row: -1, col: -1 };
-  }, [puzzle.shuffledGrid]);
+  };
 
-  const [emptySlot, setEmptySlot] = useState<{row: number, col: number}>(initialEmptySlot);
+  const [emptySlot, setEmptySlot] = useState<{row: number, col: number}>(findInitialEmptySlot());
 
   const [score, setScore] = useState(0);
   const puzzleId = useMemo(() => puzzle.solutionGrid!.flat().map(p => p?.id).sort().join('-'), [puzzle]);
