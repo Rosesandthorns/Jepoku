@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
@@ -103,39 +104,58 @@ async function checkAnswers(
     return {
         rowResults: [],
         colResults: [],
+        isCriteriaCorrect: false,
+        oddOneOutSelectionResults: [],
+        isOddOneOutSelectionCorrect: false,
         isCorrect: false,
     };
   }
 
   const puzzle: Puzzle = JSON.parse(puzzleString);
   const gridSize = puzzle.grid.length;
+  const mode = puzzle.mode;
 
   const rowGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`row-${i}`) as string);
   const colGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`col-${i}`) as string);
 
-  const rowResults = rowGuesses.map((guess, r) => {
-    if (!guess) return false;
-    const pokemonInRow = puzzle.grid[r];
-    return pokemonInRow.every(pokemon => {
-      if (!pokemon) return false;
-      return getPokemonCriteria(pokemon).has(guess);
-    });
-  });
+  const rowResults = rowGuesses.map((guess) => guess === puzzle.rowAnswers[rowGuesses.indexOf(guess)]);
+  const colResults = colGuesses.map((guess) => guess === puzzle.colAnswers[colGuesses.indexOf(guess)]);
 
-  const colResults = colGuesses.map((guess, c) => {
-    if (!guess) return false;
-    const pokemonInCol = puzzle.grid.map(row => row[c]);
-    return pokemonInCol.every(pokemon => {
-      if (!pokemon) return false;
-      return getPokemonCriteria(pokemon).has(guess);
-    });
-  });
+  const isCriteriaCorrect = [...rowResults, ...colResults].every(Boolean);
 
-  const isCorrect = [...rowResults, ...colResults].every(Boolean);
+  let isOddOneOutSelectionCorrect = false;
+  let oddOneOutSelectionResults: (boolean | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+
+  if (mode === 'odd-one-out') {
+      const selectedImposters = JSON.parse(formData.get('selectedImposters') as string) as {row: number, col: number}[];
+      
+      const correctImposterCoords = new Set(puzzle.oddOneOutCoords!.map(coord => `${coord.row},${coord.col}`));
+      const selectedImposterCoords = new Set(selectedImposters.map(coord => `${coord.row},${coord.col}`));
+      
+      isOddOneOutSelectionCorrect = correctImposterCoords.size === selectedImposterCoords.size &&
+                                     [...correctImposterCoords].every(coord => selectedImposterCoords.has(coord));
+
+      for (let r = 0; r < gridSize; r++) {
+          for (let c = 0; c < gridSize; c++) {
+              const isSelected = selectedImposterCoords.has(`${r},${c}`);
+              const isCorrectImposter = correctImposterCoords.has(`${r},${c}`);
+              if(isSelected) {
+                oddOneOutSelectionResults[r][c] = isCorrectImposter;
+              }
+          }
+      }
+  } else {
+    isOddOneOutSelectionCorrect = true; // Not applicable for other modes
+  }
+
+  const isCorrect = isCriteriaCorrect && isOddOneOutSelectionCorrect;
 
   return {
     rowResults,
     colResults,
+    isCriteriaCorrect,
+    oddOneOutSelectionResults,
+    isOddOneOutSelectionCorrect,
     isCorrect,
   };
 }
@@ -158,9 +178,9 @@ export default function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className={cn(
       "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
-      mode === 'blinded' ? "justify-start" : "justify-center",
+      mode === 'blinded' || mode === 'odd-one-out' ? "justify-start" : "justify-center",
     )}>
-      <div className={cn("w-full", mode === 'blinded' ? 'max-w-none' : 'max-w-7xl')}>
+      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
@@ -193,11 +213,11 @@ export default function HomePage({ searchParams }: HomePageProps) {
                 <DropdownMenuItem asChild>
                     <Link href="/?mode=blinded" className={cn(mode === 'blinded' && 'font-bold')}>Blinded Mode</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/?mode=odd-one-out" className={cn(mode === 'odd-one-out' && 'font-bold')}>Odd one out</Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
-                <DropdownMenuItem disabled>
-                    Odd one out
-                </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                     Imposter
                 </DropdownMenuItem>

@@ -31,11 +31,16 @@ export interface Puzzle {
   grid: (Pokemon | null)[][];
   rowAnswers: string[];
   colAnswers: string[];
+  mode: JepokuMode;
   visibleMask?: boolean[][];
+  oddOneOutCoords?: {row: number, col: number}[];
 }
 
 export interface ValidationResult {
   rowResults: (boolean | null)[];
   colResults: (boolean | null)[];
+  isCriteriaCorrect: boolean;
+  oddOneOutSelectionResults: (boolean | null)[][];
+  isOddOneOutSelectionCorrect: boolean;
   isCorrect: boolean;
 }

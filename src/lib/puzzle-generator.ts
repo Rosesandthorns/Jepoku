@@ -106,7 +106,6 @@ function generateVisibilityMask(gridSize: number, visibleCount: number): boolean
     const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
     const indices = Array.from({ length: gridSize }, (_, i) => i);
 
-    // Initial random assignment
     for (let r = 0; r < gridSize; r++) {
         const visibleCols = shuffle(indices).slice(0, visibleCount);
         for (const c of visibleCols) {
@@ -114,54 +113,46 @@ function generateVisibilityMask(gridSize: number, visibleCount: number): boolean
         }
     }
 
-    // Iteratively fix the mask
     let attempts = 0;
-    while (attempts < 200) { // Safety break
+    while (attempts < 500) { 
         let isPerfect = true;
 
-        // Check and fix columns to have AT LEAST visibleCount
-        for (let c = 0; c < gridSize; c++) {
-            const colVisibleIndices = indices.filter(r => mask[r][c]);
-            if (colVisibleIndices.length < visibleCount) {
+        for (let i = 0; i < gridSize; i++) {
+            let rowCount = indices.filter(c => mask[i][c]).length;
+            let colCount = indices.filter(r => mask[r][i]).length;
+            
+            if (rowCount < visibleCount) {
                 isPerfect = false;
-                const hiddenRows = indices.filter(r => !mask[r][c]);
-                const rowsToReveal = shuffle(hiddenRows).slice(0, visibleCount - colVisibleIndices.length);
-                rowsToReveal.forEach(r => mask[r][c] = true);
+                const hiddenCols = indices.filter(c => !mask[i][c]);
+                const colsToReveal = shuffle(hiddenCols).slice(0, visibleCount - rowCount);
+                colsToReveal.forEach(c => mask[i][c] = true);
+            }
+             if (colCount < visibleCount) {
+                isPerfect = false;
+                const hiddenRows = indices.filter(r => !mask[r][i]);
+                const rowsToReveal = shuffle(hiddenRows).slice(0, visibleCount - colCount);
+                rowsToReveal.forEach(r => mask[r][i] = true);
             }
         }
         
-        // Check and fix rows to have AT LEAST visibleCount
-        for (let r = 0; r < gridSize; r++) {
-            const rowVisibleIndices = indices.filter(c => mask[r][c]);
-            if (rowVisibleIndices.length < visibleCount) {
+        for (let i = 0; i < gridSize; i++) {
+            let rowCount = indices.filter(c => mask[i][c]).length;
+            let colCount = indices.filter(r => mask[r][i]).length;
+
+            if (rowCount > visibleCount) {
                 isPerfect = false;
-                const hiddenCols = indices.filter(c => !mask[r][c]);
-                const colsToReveal = shuffle(hiddenCols).slice(0, visibleCount - rowVisibleIndices.length);
-                colsToReveal.forEach(c => mask[r][c] = true);
+                const visibleCols = indices.filter(c => mask[i][c]);
+                const colsToHide = shuffle(visibleCols).slice(0, rowCount - visibleCount);
+                colsToHide.forEach(c => mask[i][c] = false);
+            }
+            if (colCount > visibleCount) {
+                isPerfect = false;
+                const visibleRows = indices.filter(r => mask[r][i]);
+                const rowsToHide = shuffle(visibleRows).slice(0, colCount - visibleCount);
+                rowsToHide.forEach(r => mask[r][i] = false);
             }
         }
 
-        // Shave down columns that have MORE than visibleCount
-        for (let c = 0; c < gridSize; c++) {
-            const colVisibleIndices = indices.filter(r => mask[r][c]);
-            if (colVisibleIndices.length > visibleCount) {
-                isPerfect = false;
-                const rowsToHide = shuffle(colVisibleIndices).slice(0, colVisibleIndices.length - visibleCount);
-                rowsToHide.forEach(r => mask[r][c] = false);
-            }
-        }
-
-        // Shave down rows that have MORE than visibleCount
-        for (let r = 0; r < gridSize; r++) {
-            const rowVisibleIndices = indices.filter(c => mask[r][c]);
-             if (rowVisibleIndices.length > visibleCount) {
-                isPerfect = false;
-                const colsToHide = shuffle(rowVisibleIndices).slice(0, rowVisibleIndices.length - visibleCount);
-                colsToHide.forEach(c => mask[r][c] = false);
-            }
-        }
-        
-        // Final check
         let finalCheck = true;
         for(let i = 0; i < gridSize; i++) {
             const rowCount = indices.filter(c => mask[i][c]).length;
@@ -172,9 +163,7 @@ function generateVisibilityMask(gridSize: number, visibleCount: number): boolean
             }
         }
 
-        if (finalCheck) {
-            break;
-        }
+        if (finalCheck) break;
         
         attempts++;
     }
@@ -183,7 +172,7 @@ function generateVisibilityMask(gridSize: number, visibleCount: number): boolean
 }
 
 
-async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
+async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     const allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
         console.error("No Pokemon data available.");
@@ -211,7 +200,6 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 colAnswers = poolWithRegions.slice(0, gridSize);
             }
 
-            // Check for impossible type pairs
             let impossiblePairFound = false;
             for (const rAnswer of rowAnswers) {
                 for (const cAnswer of colAnswers) {
@@ -269,6 +257,7 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 grid: grid as Pokemon[][],
                 rowAnswers,
                 colAnswers,
+                mode
             };
 
             if (mode === 'blinded') {
@@ -283,7 +272,100 @@ async function createValidPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     return null;
 }
 
+async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
+    const allPokemon = await getAllPokemonWithDetails();
+    if (!allPokemon.length) {
+        console.error("No Pokemon data available.");
+        return null;
+    }
+
+    const gridSize = 5;
+    const criteriaPool = NORMAL_CRITERIA;
+    const shuffledPokemon = shuffle(allPokemon);
+
+    for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
+        const shuffledCriteria = shuffle([...criteriaPool]);
+        if (shuffledCriteria.length < gridSize * 2) return null;
+        const rowAnswers = shuffledCriteria.slice(0, gridSize);
+        const colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
+
+        const allAnswers = new Set([...rowAnswers, ...colAnswers]);
+        if (allAnswers.size !== gridSize * 2) continue;
+
+        const grid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+        const usedPokemonIds = new Set<number>();
+        
+        let validGrid = true;
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const rowCriterion = rowAnswers[r];
+                const colCriterion = colAnswers[c];
+
+                const candidates = shuffledPokemon.filter(p => {
+                    if (usedPokemonIds.has(p.id)) return false;
+                    const pCriteria = getPokemonCriteria(p);
+                    return pCriteria.has(rowCriterion) && pCriteria.has(colCriterion);
+                });
+
+                if (candidates.length > 0) {
+                    const chosenPokemon = candidates[0];
+                    grid[r][c] = chosenPokemon;
+                    usedPokemonIds.add(chosenPokemon.id);
+                } else {
+                    validGrid = false;
+                    break;
+                }
+            }
+            if (!validGrid) break;
+        }
+        if (!validGrid) continue;
+
+        const imposterCoords: {row: number, col: number}[] = [];
+        const rowIndices = shuffle(Array.from({length: gridSize}, (_, i) => i));
+        const colIndices = shuffle(Array.from({length: gridSize}, (_, i) => i));
+        for(let i = 0; i < gridSize; i++) {
+            imposterCoords.push({row: rowIndices[i], col: colIndices[i]});
+        }
+        
+        let impostersPlaced = true;
+        for (const coord of imposterCoords) {
+            const rowCriterion = rowAnswers[coord.row];
+            const colCriterion = colAnswers[coord.col];
+
+            const imposterCandidates = shuffledPokemon.filter(p => {
+                if (usedPokemonIds.has(p.id)) return false;
+                const pCriteria = getPokemonCriteria(p);
+                return !pCriteria.has(rowCriterion) && !pCriteria.has(colCriterion);
+            });
+
+            if (imposterCandidates.length > 0) {
+                const chosenImposter = imposterCandidates[0];
+                grid[coord.row][coord.col] = chosenImposter;
+                usedPokemonIds.add(chosenImposter.id);
+            } else {
+                impostersPlaced = false;
+                break;
+            }
+        }
+        if (!impostersPlaced) continue;
+
+        return {
+            grid: grid as Pokemon[][],
+            rowAnswers,
+            colAnswers,
+            mode: 'odd-one-out',
+            oddOneOutCoords: imposterCoords,
+        };
+    }
+    
+    console.error("Failed to generate an Odd One Out puzzle after multiple retries.");
+    return null;
+}
+
 
 export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
-    return createValidPuzzle(mode);
+    if (mode === 'odd-one-out') {
+        return createOddOneOutPuzzle();
+    }
+    return createStandardPuzzle(mode);
 }

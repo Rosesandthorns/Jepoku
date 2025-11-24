@@ -31,6 +31,9 @@ function getInitialState(puzzle: Puzzle): ValidationResult {
   return {
     rowResults: Array(size).fill(null),
     colResults: Array(size).fill(null),
+    isCriteriaCorrect: false,
+    oddOneOutSelectionResults: Array(size).fill(null).map(() => Array(size).fill(null)),
+    isOddOneOutSelectionCorrect: false,
     isCorrect: false,
   }
 }
@@ -61,11 +64,14 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   const [score, setScore] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
+  const [selectedImposters, setSelectedImposters] = useState<{row: number, col: number}[]>([]);
+
 
   const puzzleId = useMemo(() => puzzle.grid.flat().map(p => p?.id).join('-'), [puzzle]);
   
   const gridSize = puzzle.grid.length;
   const isBlinded = mode === 'blinded';
+  const isOddOneOut = mode === 'odd-one-out';
 
   const criteriaPool = mode === 'hard' ? HARD_CRITERIA : mode === 'easy' ? EASY_CRITERIA : NORMAL_CRITERIA;
 
@@ -110,6 +116,22 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+  
+  const handleImposterSelect = (row: number, col: number) => {
+    if (state.isCorrect) return;
+
+    setSelectedImposters(prev => {
+      const isSelected = prev.some(coord => coord.row === row && coord.col === col);
+      if (isSelected) {
+        return prev.filter(coord => coord.row !== row || coord.col !== col);
+      } else {
+        if (prev.length < gridSize) {
+            return [...prev, {row, col}];
+        }
+        return prev;
+      }
+    });
+  }
 
   const getSelectClass = (isCorrect: boolean | null) => {
     if (isCorrect === true) {
@@ -120,11 +142,27 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
     }
     return '';
   };
+  
+  const getOddOneOutTileClass = (row: number, col: number) => {
+    if (!isOddOneOut) return '';
+    const result = state.oddOneOutSelectionResults?.[row]?.[col];
+    if (result === true) {
+        return 'ring-4 ring-green-500';
+    }
+    if (result === false) {
+        return 'ring-4 ring-red-500';
+    }
+    const isSelected = selectedImposters.some(coord => coord.row === row && coord.col === col);
+    if(isSelected) {
+        return 'ring-4 ring-blue-500';
+    }
+    return 'cursor-pointer';
+  }
 
 
   return (
     <TooltipProvider>
-      <Card className={cn(isBlinded ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
+      <Card className={cn(isBlinded || isOddOneOut ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
         <CardContent className="p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xl font-bold">
@@ -133,18 +171,22 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
             </div>
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className={cn(isBlinded ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
+                    <Button variant="ghost" size="icon" className={cn(isBlinded || isOddOneOut ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
                         <HelpCircle className="h-6 w-6" />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Guess the common Pokemon type for each row and column. Hold TAB to see answers.</p>
+                    {isOddOneOut 
+                      ? <p>Guess criteria & click the 5 Pokémon that don't fit their row and column.</p>
+                      : <p>Guess the common Pokemon trait for each row and column. Hold TAB to see answers.</p>
+                    }
                 </TooltipContent>
             </Tooltip>
           </div>
           <form action={formAction} className="space-y-6">
              <input type="hidden" name="puzzle" value={JSON.stringify(puzzle)} />
-            <div className={cn("grid items-center gap-2 sm:gap-4", isBlinded ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
+             {isOddOneOut && <input type="hidden" name="selectedImposters" value={JSON.stringify(selectedImposters)} />}
+            <div className={cn("grid items-center gap-2 sm:gap-4", isBlinded || isOddOneOut ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
               <div />
               <div className={cn("grid gap-2 sm:gap-4", `grid-cols-${gridSize}`)} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
                 {Array.from({ length: gridSize }).map((_, i) => (
@@ -153,7 +195,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                       <SelectTrigger className={cn(
                           'font-semibold', 
                           getSelectClass(state.colResults[i]),
-                          isBlinded ? 'text-black' : ''
+                          (isBlinded || isOddOneOut) ? 'text-black' : ''
                         )}>
                         <SelectValue placeholder={showAnswers ? puzzle.colAnswers[i] : `Col ${i + 1}`} />
                       </SelectTrigger>
@@ -178,7 +220,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                       <SelectTrigger className={cn(
                         'w-28 font-semibold', 
                         getSelectClass(state.rowResults[i]),
-                        isBlinded ? 'text-black' : ''
+                         (isBlinded || isOddOneOut) ? 'text-black' : ''
                         )}>
                         <SelectValue placeholder={showAnswers ? puzzle.rowAnswers[i] : `Row ${i + 1}`} />
                       </SelectTrigger>
@@ -209,7 +251,11 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                   const isVisible = !isBlinded || puzzle.visibleMask?.[row]?.[col];
 
                   return (
-                    <div key={pokemon?.id || i} className="aspect-square w-full sm:w-24 md:w-28 lg:w-32">
+                    <div 
+                      key={pokemon?.id || i} 
+                      className={cn("aspect-square w-full sm:w-24 md:w-28 lg:w-32 rounded-lg transition-all", getOddOneOutTileClass(row, col))}
+                      onClick={isOddOneOut ? () => handleImposterSelect(row, col) : undefined}
+                    >
                       {pokemon ? (
                         isVisible ? (
                           <Tooltip>
@@ -241,6 +287,12 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 })}
               </div>
             </div>
+            
+            {isOddOneOut && !state.isCorrect && (
+                <div className="text-center text-sm text-gray-400">
+                    <p>{selectedImposters.length} / {gridSize} imposters selected.</p>
+                </div>
+            )}
 
             <div className="mt-6">
               {state.isCorrect ? (
