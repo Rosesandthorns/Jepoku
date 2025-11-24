@@ -236,13 +236,13 @@ export default function HomePage({ searchParams }: HomePageProps) {
                     <Link href="/?mode=blinded" className={cn(mode === 'blinded' && 'font-bold')}>Blinded Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                    <Link href="/?mode=scarred" className={cn(mode === 'scarred' && 'font-bold')}>Scarred Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
                     <Link href="/?mode=odd-one-out" className={cn(mode === 'odd-one-out' && 'font-bold')}>Odd one out</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
+                <DropdownMenuItem disabled>
+                    Scarred Mode
+                </DropdownMenuItem>
                 <DropdownMenuItem disabled>
                     Imposter
                 </DropdownMenuItem>
