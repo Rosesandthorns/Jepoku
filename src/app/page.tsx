@@ -118,11 +118,33 @@ async function checkAnswers(
   const rowGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`row-${i}`) as string);
   const colGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`col-${i}`) as string);
 
-  const rowResults = rowGuesses.map((guess) => guess === puzzle.rowAnswers[rowGuesses.indexOf(guess)]);
-  const colResults = colGuesses.map((guess) => guess === puzzle.colAnswers[colGuesses.indexOf(guess)]);
+  let rowResults: (boolean | null)[] = [];
+  let colResults: (boolean | null)[] = [];
 
-  const isCriteriaCorrect = [...rowResults, ...colResults].every(Boolean);
+  if (mode === 'odd-one-out') {
+    const imposterCoordsSet = new Set(puzzle.oddOneOutCoords!.map(c => `${c.row},${c.col}`));
+    
+    rowResults = rowGuesses.map((guess, r) => {
+        if (!guess) return null;
+        const imposterCol = puzzle.oddOneOutCoords!.find(c => c.row === r)!.col;
+        const validPokemon = puzzle.grid[r].filter((_, c) => c !== imposterCol);
+        return validPokemon.every(p => p && getPokemonCriteria(p).has(guess));
+    });
 
+    colResults = colGuesses.map((guess, c) => {
+        if (!guess) return null;
+        const imposterRow = puzzle.oddOneOutCoords!.find(c => c.col === c)!.row;
+        const validPokemon = puzzle.grid.map(row => row[c]).filter((_, r) => r !== imposterRow);
+        return validPokemon.every(p => p && getPokemonCriteria(p).has(guess));
+    });
+
+  } else {
+    rowResults = rowGuesses.map((guess, index) => guess ? guess === puzzle.rowAnswers[index] : null);
+    colResults = colGuesses.map((guess, index) => guess ? guess === puzzle.colAnswers[index] : null);
+  }
+
+  const isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);
+  
   let isOddOneOutSelectionCorrect = false;
   let oddOneOutSelectionResults: (boolean | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
 
