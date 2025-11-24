@@ -188,9 +188,10 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         case 'hard':
         case 'scarred':
         case 'imposter':
-            criteriaPool = HARD_CRITERIA;
+            criteriaPool = [...HARD_CRITERIA, ...NORMAL_CRITERIA];
             break;
         case 'easy':
+        case 'timer':
             criteriaPool = EASY_CRITERIA;
             break;
         default:
@@ -545,6 +546,7 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         case 'hard':
         case 'blinded':
         case 'scarred':
+        case 'timer':
             return createStandardPuzzle(mode);
         default:
             return createStandardPuzzle('normal');

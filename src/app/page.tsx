@@ -2,6 +2,7 @@
 
 
 
+
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
@@ -15,7 +16,8 @@ export const revalidate = 0;
 
 async function getNewPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
   'use server';
-  return generatePuzzle(mode);
+  const effectiveMode = mode === 'timer' ? 'easy' : mode;
+  return generatePuzzle(effectiveMode);
 }
 
 function getPokemonCriteria(pokemon: Pokemon): Set<string> {
@@ -251,15 +253,16 @@ export default function HomePage({ searchParams }: HomePageProps) {
     (modeParam === 'odd-one-out' ? 'odd-one-out' : 
     (modeParam === 'imposter' ? 'imposter' : 
     (modeParam === 'scarred' ? 'scarred' :
-    (modeParam === 'miss-matched' ? 'miss-matched' : 'normal'))))));
+    (modeParam === 'miss-matched' ? 'miss-matched' : 
+    (modeParam === 'timer' ? 'timer' : 'normal')))))));
 
 
   return (
     <main className={cn(
       "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
-      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' ? "justify-start" : "justify-center",
+      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'timer' ? "justify-start" : "justify-center",
     )}>
-      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'imposter' ? 'max-w-none' : 'max-w-7xl')}>
+      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'imposter' || mode === 'timer' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
@@ -288,6 +291,9 @@ export default function HomePage({ searchParams }: HomePageProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/?mode=hard" className={cn(mode === 'hard' && 'font-bold')}>Hard Mode</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/?mode=timer" className={cn(mode === 'timer' && 'font-bold')}>Timer Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/?mode=blinded" className={cn(mode === 'blinded' && 'font-bold')}>Blinded Mode</Link>

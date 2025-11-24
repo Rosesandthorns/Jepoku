@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { FC } from 'react';
@@ -45,6 +46,7 @@ interface GameBoardProps {
     payload: FormData
   ) => Promise<ValidationResult>;
   mode: JepokuMode;
+  onSolve?: () => void;
 }
 
 function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
@@ -58,7 +60,7 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
   );
 }
 
-export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode }) => {
+export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode, onSolve }) => {
   const [state, formAction] = useActionState(checkAnswersAction, getInitialState(puzzle));
 
   const [score, setScore] = useState(0);
@@ -70,13 +72,16 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   const puzzleId = useMemo(() => puzzle.grid.flat().map(p => p?.id).join('-'), [puzzle]);
   
   const gridSize = puzzle.grid.length;
-  const isBlinded = mode === 'blinded';
+  const isBlindedLike = mode === 'blinded' || mode === 'scarred';
+  const isDarkTheme = isBlindedLike || mode === 'odd-one-out' || mode === 'imposter' || mode === 'miss-matched' || mode === 'timer';
   const isOddOneOut = mode === 'odd-one-out';
   const isImposter = mode === 'imposter';
+  const isTimerMode = mode === 'timer';
 
-  const criteriaPool = mode === 'hard' || mode === 'imposter' ? HARD_CRITERIA : mode === 'easy' ? EASY_CRITERIA : NORMAL_CRITERIA;
+  const criteriaPool = mode === 'hard' || mode === 'imposter' ? HARD_CRITERIA : mode === 'easy' || mode === 'timer' ? EASY_CRITERIA : NORMAL_CRITERIA;
 
   useEffect(() => {
+    if (isTimerMode) return;
     const savedScore = localStorage.getItem('jepokuScore');
     if (savedScore) {
       setScore(parseInt(savedScore, 10));
@@ -84,19 +89,30 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
     // Fade in the puzzle on mount
     const timer = setTimeout(() => setShowPuzzle(true), 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isTimerMode]);
+
+  useEffect(() => {
+    setShowPuzzle(true); // Always show puzzle immediately for timer mode or re-renders
+  }, [puzzleId]);
+
 
   useEffect(() => {
     if (state.isCorrect) {
-      const lastSolved = localStorage.getItem('lastSolvedPuzzleId');
-      if (lastSolved !== puzzleId) {
-        const newScore = score + 1;
-        setScore(newScore);
-        localStorage.setItem('jepokuScore', newScore.toString());
-        localStorage.setItem('lastSolvedPuzzleId', puzzleId);
+      if(onSolve) {
+        // In modes like Timer mode, let the parent handle solve state
+        onSolve();
+      } else {
+        // Standard score keeping
+        const lastSolved = localStorage.getItem('lastSolvedPuzzleId');
+        if (lastSolved !== puzzleId) {
+          const newScore = score + 1;
+          setScore(newScore);
+          localStorage.setItem('jepokuScore', newScore.toString());
+          localStorage.setItem('lastSolvedPuzzleId', puzzleId);
+        }
       }
     }
-  }, [state.isCorrect, puzzleId, score]);
+  }, [state.isCorrect, puzzleId, score, onSolve]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -167,16 +183,18 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
 
   return (
     <TooltipProvider>
-      <Card className={cn(isBlinded || isOddOneOut || isImposter ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
+      <Card className={cn(isDarkTheme ? "w-max border-gray-700 bg-gray-800/50 text-white" : "")}>
         <CardContent className="p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xl font-bold">
-              <Trophy className="h-6 w-6 text-yellow-500" />
-              <span>Score: {score}</span>
-            </div>
+            {!isTimerMode && (
+                <div className="flex items-center gap-2 text-xl font-bold">
+                    <Trophy className="h-6 w-6 text-yellow-500" />
+                    <span>Score: {score}</span>
+                </div>
+            )}
              <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className={cn(isBlinded || isOddOneOut || isImposter ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
+                    <Button variant="ghost" size="icon" className={cn(isDarkTheme ? 'text-gray-300 hover:text-white hover:bg-gray-700' : '')}>
                         <HelpCircle className="h-6 w-6" />
                     </Button>
                 </TooltipTrigger>
@@ -193,7 +211,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
           <form action={formAction} className="space-y-6">
              <input type="hidden" name="puzzle" value={JSON.stringify(puzzle)} />
              {(isOddOneOut || isImposter) && <input type="hidden" name="selectedImposters" value={JSON.stringify(selectedImposters)} />}
-            <div className={cn("grid items-center gap-2 sm:gap-4", isBlinded || isOddOneOut || isImposter ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
+            <div className={cn("grid items-center gap-2 sm:gap-4", isBlindedLike || isOddOneOut || isImposter ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
               <div />
               <div className={cn("grid gap-2 sm:gap-4", `grid-cols-${gridSize}`)} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
                 {Array.from({ length: gridSize }).map((_, i) => (
@@ -202,7 +220,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                       <SelectTrigger className={cn(
                           'font-semibold', 
                           getSelectClass(state.colResults[i]),
-                          (isBlinded || isOddOneOut || isImposter) ? 'text-black' : ''
+                          (isDarkTheme) ? 'text-black' : ''
                         )}>
                         <SelectValue placeholder={showAnswers ? puzzle.colAnswers[i] : `Col ${i + 1}`} />
                       </SelectTrigger>
@@ -227,7 +245,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                       <SelectTrigger className={cn(
                         'w-28 font-semibold', 
                         getSelectClass(state.rowResults[i]),
-                         (isBlinded || isOddOneOut || isImposter) ? 'text-black' : ''
+                         (isDarkTheme) ? 'text-black' : ''
                         )}>
                         <SelectValue placeholder={showAnswers ? puzzle.rowAnswers[i] : `Row ${i + 1}`} />
                       </SelectTrigger>
@@ -255,7 +273,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 {puzzle.grid.flat().map((pokemon, i) => {
                   const row = Math.floor(i / gridSize);
                   const col = i % gridSize;
-                  const isVisible = !isBlinded || puzzle.visibleMask?.[row]?.[col];
+                  const isVisible = !isBlindedLike || puzzle.visibleMask?.[row]?.[col];
 
                   return (
                     <div 
@@ -303,12 +321,14 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
 
             <div className="mt-6">
               {state.isCorrect ? (
-                <div className="text-center space-y-4">
-                    <p className="text-2xl font-bold text-green-600">You solved it!</p>
-                    <Button asChild size="lg" className="w-full">
-                        <a href={`/?mode=${mode}`}>Play Next Puzzle</a>
-                    </Button>
-                </div>
+                !isTimerMode && (
+                    <div className="text-center space-y-4">
+                        <p className="text-2xl font-bold text-green-600">You solved it!</p>
+                        <Button asChild size="lg" className="w-full">
+                            <a href={`/?mode=${mode}`}>Play Next Puzzle</a>
+                        </Button>
+                    </div>
+                )
               ) : (
                 <SubmitButton isCorrect={state.isCorrect} />
               )}

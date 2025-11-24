@@ -25,7 +25,7 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'scarred' | 'miss-matched';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'scarred' | 'miss-matched' | 'timer';
 
 export interface Puzzle {
   grid: (Pokemon | null)[][];

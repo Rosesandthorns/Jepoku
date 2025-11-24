@@ -5,6 +5,7 @@ import { useState, useEffect, useTransition } from 'react';
 import type { Puzzle, ValidationResult, JepokuMode } from '@/lib/definitions';
 import { GameBoard } from '@/components/game-board';
 import { MissMatchedBoard } from '@/components/miss-matched-board';
+import { TimerModeBoard } from '@/components/timer-mode-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -28,6 +29,10 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (mode === 'timer') {
+      setPuzzle(null); // Timer mode manages its own puzzle loading
+      return;
+    }
     // Reset puzzle when mode changes
     setPuzzle(null);
 
@@ -37,6 +42,10 @@ export function PuzzleLoader({ getPuzzleAction, checkAnswersAction, mode }: Puzz
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]); // We only want to re-run this when the mode changes.
+
+  if (mode === 'timer') {
+    return <TimerModeBoard getPuzzleAction={getPuzzleAction} checkAnswersAction={checkAnswersAction} />;
+  }
 
 
   if (isPending || !puzzle) {
