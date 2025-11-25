@@ -178,7 +178,7 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
 
     const isBlindedLike = mode === 'blinded';
     const isHardLike = mode === 'hard' || mode === 'imposter';
-    const gridSize = isBlindedLike ? 6 : 3;
+    const gridSize = isBlindedLike ? 5 : 3;
 
     let criteriaPool: string[];
     switch (mode) {
@@ -204,35 +204,10 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         let colAnswers: string[];
 
         if (isBlindedLike) {
-            const regionCriteria = shuffle(criteriaPool.filter(c => REGIONS.includes(c)));
-            const otherCriteria = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
-
-            const regionsAreRows = Math.random() > 0.5;
-
-            let primaryPool = regionsAreRows ? regionCriteria : otherCriteria;
-            let secondaryPool = regionsAreRows ? otherCriteria : regionCriteria;
-            
-            if (primaryPool.length < gridSize || secondaryPool.length < gridSize) continue;
-
-            rowAnswers = shuffle(primaryPool).slice(0, gridSize);
-            colAnswers = shuffle(secondaryPool).slice(0, gridSize);
-            
-            let hasImpossiblePair = false;
-            for (const r of rowAnswers) {
-                for (const c of colAnswers) {
-                    const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
-                        (pair[0].toUpperCase() === r.toUpperCase() && pair[1].toUpperCase() === c.toUpperCase()) || 
-                        (pair[0].toUpperCase() === c.toUpperCase() && pair[1].toUpperCase() === r.toUpperCase())
-                    );
-                    if (isImpossible) {
-                        hasImpossiblePair = true;
-                        break;
-                    }
-                }
-                if (hasImpossiblePair) break;
-            }
-            if (hasImpossiblePair) continue;
-
+            const shuffledCriteria = shuffle([...criteriaPool]);
+            if (shuffledCriteria.length < gridSize * 2) return null;
+            rowAnswers = shuffledCriteria.slice(0, gridSize);
+            colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
 
         } else if (isHardLike) {
             let availableCriteria = [...criteriaPool];
@@ -305,9 +280,9 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 mode
             };
 
-            if (isBlindedLike) {
-                puzzle.visibleMask = generateVisibilityMask(gridSize);
-            }
+            // if (isBlindedLike) {
+            //     puzzle.visibleMask = generateVisibilityMask(gridSize);
+            // }
 
             return puzzle;
         }
@@ -532,6 +507,7 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
 
     return {
         ...solvedPuzzle,
+        grid: shuffledGrid, // The main grid is the shuffled one
         mode: 'miss-matched',
         shuffledGrid,
         solutionGrid: solvedPuzzle.grid,
