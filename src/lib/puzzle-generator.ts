@@ -118,8 +118,9 @@ function getPokemonCriteria(pokemon: Pokemon): Set<string> {
 function generateVisibilityMask(gridSize: number): boolean[][] {
     const mask: boolean[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
     const indices = Array.from({ length: gridSize }, (_, i) => i);
-    const visibleCount = 3;
+    const visibleCount = Math.max(1, Math.floor(gridSize / 2)); // e.g., 2 for 5x5, 3 for 6x6
 
+    // Ensure at least `visibleCount` are true for each row
     for (let r = 0; r < gridSize; r++) {
         const visibleCols = shuffle([...indices]).slice(0, visibleCount);
         for (const c of visibleCols) {
@@ -127,6 +128,7 @@ function generateVisibilityMask(gridSize: number): boolean[][] {
         }
     }
     
+    // Ensure at least `visibleCount` are true for each column
     for (let c = 0; c < gridSize; c++) {
         const colCount = mask.reduce((acc, row) => acc + (row[c] ? 1 : 0), 0);
         if (colCount < visibleCount) {
@@ -134,12 +136,6 @@ function generateVisibilityMask(gridSize: number): boolean[][] {
             const toShow = shuffle(hiddenRows).slice(0, visibleCount - colCount);
             for(const r of toShow) {
                 mask[r][c] = true;
-            }
-        } else if (colCount > visibleCount) {
-            const visibleRows = indices.filter(r => mask[r][c]);
-            const toHide = shuffle(visibleRows).slice(0, colCount - visibleCount);
-             for(const r of toHide) {
-                mask[r][c] = false;
             }
         }
     }
@@ -200,44 +196,68 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         if (attempt > 0 && attempt % 5000 === 0) {
             console.log(`[${mode}] Generation attempt: ${attempt}...`);
         }
-        let rowAnswers: string[];
-        let colAnswers: string[];
+        let rowAnswers: string[] = [];
+        let colAnswers: string[] = [];
+        let availableCriteria = shuffle([...criteriaPool]);
 
         if (isBlindedLike) {
-            const shuffledCriteria = shuffle([...criteriaPool]);
-            if (shuffledCriteria.length < gridSize * 2) return null;
-            rowAnswers = shuffledCriteria.slice(0, gridSize);
-            colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
+            // Smarter criteria selection for Blinded mode
+            let selectedCriteria: string[] = [];
+            while(selectedCriteria.length < gridSize * 2 && availableCriteria.length > 0) {
+                const nextCriterion = availableCriteria.pop()!;
+
+                // Create a temporary list of what criteria would be if we added the new one
+                const tempSelected = [...selectedCriteria, nextCriterion];
+                const tempRows = tempSelected.slice(0, Math.ceil(tempSelected.length / 2));
+                const tempCols = tempSelected.slice(Math.ceil(tempSelected.length / 2));
+
+                // Rule 1: Regions on one axis only
+                const hasRegionOnBothAxes = tempRows.some(r => REGIONS.includes(r)) && tempCols.some(c => REGIONS.includes(c));
+                if (hasRegionOnBothAxes) continue;
+
+                // Rule 2: No impossible type intersections
+                let hasImpossiblePair = false;
+                for (const r of tempRows) {
+                    for (const c of tempCols) {
+                        const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair =>
+                            (pair[0] === r && pair[1] === c) || (pair[1] === r && pair[0] === c)
+                        );
+                        if (isImpossible) {
+                            hasImpossiblePair = true;
+                            break;
+                        }
+                    }
+                    if (hasImpossiblePair) break;
+                }
+                if (hasImpossiblePair) continue;
+
+                // If all checks pass, add the criterion
+                selectedCriteria.push(nextCriterion);
+            }
+
+            if (selectedCriteria.length < gridSize * 2) continue; // Failed to find a valid set
+            
+            rowAnswers = selectedCriteria.slice(0, gridSize);
+            colAnswers = selectedCriteria.slice(gridSize);
 
         } else if (isHardLike) {
-            let availableCriteria = [...criteriaPool];
             const allSelected: string[] = [];
-            
             for(let i = 0; i < gridSize * 2; i++) {
                 if (availableCriteria.length === 0) break;
-                
-                const selected = shuffle(availableCriteria)[0];
+                const selected = availableCriteria.pop()!;
                 allSelected.push(selected);
-                
-                availableCriteria = availableCriteria.filter(c => c !== selected);
-
                 const opposingPair = OPPOSING_HARD_CRITERIA.find(p => p.includes(selected));
                 if (opposingPair) {
                     const opposite = opposingPair.find(p => p !== selected);
                     availableCriteria = availableCriteria.filter(c => c !== opposite);
                 }
             }
-
-            if (allSelected.length < gridSize * 2) continue; 
-
+            if (allSelected.length < gridSize * 2) continue;
             rowAnswers = allSelected.slice(0, gridSize);
             colAnswers = allSelected.slice(gridSize, gridSize * 2);
-
         } else {
-            const shuffledCriteria = shuffle([...criteriaPool]);
-            if (shuffledCriteria.length < gridSize * 2) return null;
-            rowAnswers = shuffledCriteria.slice(0, gridSize);
-            colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
+            rowAnswers = availableCriteria.slice(0, gridSize);
+            colAnswers = availableCriteria.slice(gridSize, gridSize * 2);
         }
 
         const allAnswers = new Set([...rowAnswers, ...colAnswers]);
@@ -299,8 +319,9 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         console.error("No Pokemon data available.");
         return null;
     }
-
-    const gridSize = 5;
+    
+    // For Odd One Out, we'll stick to a 3x3 for reliability.
+    const gridSize = 3;
     const criteriaPool = NORMAL_CRITERIA;
     const criteriaMap = buildCriteriaMap(allPokemon, criteriaPool);
 
@@ -308,58 +329,15 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         if (attempt > 0 && attempt % 5000 === 0) {
             console.log(`[odd-one-out] Generation attempt: ${attempt}...`);
         }
-        const shuffledCriteria = shuffle([...criteriaPool]);
-        if (shuffledCriteria.length < gridSize * 2) return null;
-        const rowAnswers = shuffledCriteria.slice(0, gridSize);
-        const colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
-
-        const allAnswers = new Set([...rowAnswers, ...colAnswers]);
-        if (allAnswers.size !== gridSize * 2) continue;
         
-        let hasImpossiblePair = false;
-        for (const r of rowAnswers) {
-            for (const c of colAnswers) {
-                const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
-                    (pair[0].toUpperCase() === r.toUpperCase() && pair[1].toUpperCase() === c.toUpperCase()) || 
-                    (pair[0].toUpperCase() === c.toUpperCase() && pair[1].toUpperCase() === r.toUpperCase())
-                );
-                if (isImpossible) {
-                    hasImpossiblePair = true;
-                    break;
-                }
-            }
-            if (hasImpossiblePair) break;
-        }
-        if (hasImpossiblePair) continue;
-
-
-        const grid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
-        const usedPokemonIds = new Set<number>();
+        // 1. Generate a valid 3x3 base puzzle first.
+        const basePuzzle = await createStandardPuzzle('normal');
+        if (!basePuzzle) continue;
         
-        let validGrid = true;
-        for (let r = 0; r < gridSize; r++) {
-            for (let c = 0; c < gridSize; c++) {
-                const rowCriterion = rowAnswers[r];
-                const colCriterion = colAnswers[c];
-
-                const rowCandidates = new Set(criteriaMap.get(rowCriterion) || []);
-                const colCandidates = criteriaMap.get(colCriterion) || [];
-
-                const candidates = shuffle(colCandidates.filter(p => rowCandidates.has(p) && !usedPokemonIds.has(p.id)));
-
-                if (candidates.length > 0) {
-                    const chosenPokemon = candidates[0];
-                    grid[r][c] = chosenPokemon;
-                    usedPokemonIds.add(chosenPokemon.id);
-                } else {
-                    validGrid = false;
-                    break;
-                }
-            }
-            if (!validGrid) break;
-        }
-        if (!validGrid) continue;
-
+        const { grid, rowAnswers, colAnswers } = basePuzzle;
+        const usedPokemonIds = new Set(grid.flat().map(p => p.id));
+        
+        // 2. Select imposter coordinates (one per row/col)
         const imposterCoords: {row: number, col: number}[] = [];
         const rowIndices = shuffle(Array.from({length: gridSize}, (_, i) => i));
         const colIndices = shuffle(Array.from({length: gridSize}, (_, i) => i));
@@ -367,6 +345,7 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
             imposterCoords.push({row: rowIndices[i], col: colIndices[i]});
         }
         
+        // 3. Replace with imposters
         let impostersPlaced = true;
         for (const coord of imposterCoords) {
             const rowCriterion = rowAnswers[coord.row];
@@ -374,7 +353,7 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
             const originalPokemonId = (grid[coord.row][coord.col] as Pokemon).id;
             usedPokemonIds.delete(originalPokemonId);
 
-
+            // Find a pokemon that fits NEITHER criterion
             const imposterCandidates = shuffle(allPokemon.filter(p => {
                 if (usedPokemonIds.has(p.id)) return false;
                 const pCriteria = getPokemonCriteria(p);
@@ -387,20 +366,20 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
                 usedPokemonIds.add(chosenImposter.id);
             } else {
                 impostersPlaced = false;
-                usedPokemonIds.add(originalPokemonId); // add back if failed
                 break;
             }
         }
-        if (!impostersPlaced) continue;
-
-        console.log(`[odd-one-out] Successfully generated puzzle after ${attempt + 1} attempts.`);
-        return {
-            grid: grid as Pokemon[][],
-            rowAnswers,
-            colAnswers,
-            mode: 'odd-one-out',
-            oddOneOutCoords: imposterCoords,
-        };
+        
+        if (impostersPlaced) {
+            console.log(`[odd-one-out] Successfully generated puzzle after ${attempt + 1} attempts.`);
+            return {
+                grid: grid as Pokemon[][],
+                rowAnswers,
+                colAnswers,
+                mode: 'odd-one-out',
+                oddOneOutCoords: imposterCoords,
+            };
+        }
     }
     
     console.error(`[odd-one-out] Failed to generate a puzzle after ${MAX_PUZZLE_ATTEMPTS} attempts.`);
@@ -491,6 +470,8 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
     const pokemonToShuffle = solutionGrid.flat();
     const emptySlotIndex = Math.floor(Math.random() * (gridSize * gridSize));
     
+    // The pokemon at the empty slot index will be the one left out
+    pokemonToShuffle.splice(emptySlotIndex, 1);
     const shuffledPokemon = shuffle(pokemonToShuffle);
     
     const shuffledGrid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
@@ -502,7 +483,7 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
             }
         }
     }
-    // One pokemon will be left out. The empty slot replaces it.
+    
     console.log("[miss-matched] Successfully generated puzzle.");
 
     return {
@@ -595,3 +576,5 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             return createStandardPuzzle('normal');
     }
 }
+
+    
