@@ -6,6 +6,7 @@
 
 
 
+
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
@@ -264,7 +265,7 @@ interface HomePageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default function HomePage({ searchParams }: HomePageProps) {
+export default async function HomePage({ searchParams }: HomePageProps) {
   const modeParam = searchParams.mode;
   const mode: JepokuMode = 
     modeParam === 'hard' ? 'hard' : 
