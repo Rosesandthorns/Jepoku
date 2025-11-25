@@ -224,8 +224,38 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         let rowAnswers: string[];
         let colAnswers: string[];
 
-        // --- CRITERIA SELECTION LOGIC ---
-        if (isHardLike) {
+        if (isBlindedLike) {
+            const regionCriteria = shuffle(criteriaPool.filter(c => REGIONS.includes(c)));
+            const otherCriteria = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
+
+            const regionsAreRows = Math.random() > 0.5;
+
+            let primaryPool = regionsAreRows ? regionCriteria : otherCriteria;
+            let secondaryPool = regionsAreRows ? otherCriteria : regionCriteria;
+
+            if (primaryPool.length < gridSize || secondaryPool.length < gridSize) continue;
+
+            rowAnswers = shuffle(primaryPool).slice(0, gridSize);
+            colAnswers = shuffle(secondaryPool).slice(0, gridSize);
+            
+            // Check for impossible type pairs
+            let hasImpossiblePair = false;
+            for (const r of rowAnswers) {
+                for (const c of colAnswers) {
+                    const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
+                        (pair[0] === r && pair[1] === c) || (pair[0] === c && pair[1] === r)
+                    );
+                    if (isImpossible) {
+                        hasImpossiblePair = true;
+                        break;
+                    }
+                }
+                if (hasImpossiblePair) break;
+            }
+            if (hasImpossiblePair) continue;
+
+
+        } else if (isHardLike) {
             let availableCriteria = [...criteriaPool];
             const allSelected: string[] = [];
             
@@ -255,7 +285,6 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             rowAnswers = shuffledCriteria.slice(0, gridSize);
             colAnswers = shuffledCriteria.slice(gridSize, gridSize * 2);
         }
-        // --- END CRITERIA SELECTION ---
 
         const allAnswers = new Set([...rowAnswers, ...colAnswers]);
         if (allAnswers.size !== gridSize * 2) {
@@ -327,6 +356,22 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
 
         const allAnswers = new Set([...rowAnswers, ...colAnswers]);
         if (allAnswers.size !== gridSize * 2) continue;
+        
+        let hasImpossiblePair = false;
+        for (const r of rowAnswers) {
+            for (const c of colAnswers) {
+                const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
+                    (pair[0] === r && pair[1] === c) || (pair[0] === c && pair[1] === r)
+                );
+                if (isImpossible) {
+                    hasImpossiblePair = true;
+                    break;
+                }
+            }
+            if (hasImpossiblePair) break;
+        }
+        if (hasImpossiblePair) continue;
+
 
         const grid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
         const usedPokemonIds = new Set<number>();
@@ -540,13 +585,13 @@ async function createOrderPuzzle(): Promise<Puzzle | null> {
             case 'pokedex': return p.id;
             case 'height': return p.height;
             case 'weight': return p.weight;
+            case 'bst': return Object.values(p.stats).reduce((a, b) => a + b, 0);
             case 'hp': return p.stats.hp;
             case 'attack': return p.stats.attack;
             case 'defense': return p.stats.defense;
             case 'special-attack': return p.stats.specialAttack;
             case 'special-defense': return p.stats.specialDefense;
             case 'speed': return p.stats.speed;
-            case 'bst': return Object.values(p.stats).reduce((a, b) => a + b, 0);
         }
     };
 
