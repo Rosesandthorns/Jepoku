@@ -50,18 +50,15 @@ export async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | n
         if (isBlindedLike) {
             const selectedCriteria: string[] = [];
             let hasRegionAxis: 'row' | 'col' | null = null;
-            const currentPool = shuffle([...criteriaPool]);
-
-            while (selectedCriteria.length < gridSize * 2 && currentPool.length > 0) {
+            
+            while(selectedCriteria.length < gridSize * 2 && availableCriteria.length > 0) {
                 const isRow = selectedCriteria.length < gridSize;
                 const axisAnswers = isRow ? rowAnswers : colAnswers;
                 const otherAxisAnswers = isRow ? colAnswers : rowAnswers;
-
+                
                 let foundCriterion = false;
-                for (let i = 0; i < currentPool.length; i++) {
-                    const nextCriterion = currentPool[i];
-
-                    if (selectedCriteria.includes(nextCriterion)) continue;
+                for (let i = 0; i < availableCriteria.length; i++) {
+                    const nextCriterion = availableCriteria[i];
 
                     if (REGIONS.includes(nextCriterion)) {
                         if (hasRegionAxis && (isRow ? hasRegionAxis === 'col' : hasRegionAxis === 'row')) {
@@ -83,7 +80,7 @@ export async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | n
 
                     axisAnswers.push(nextCriterion);
                     selectedCriteria.push(nextCriterion);
-                    currentPool.splice(i, 1);
+                    availableCriteria.splice(i, 1);
                     if (REGIONS.includes(nextCriterion) && !hasRegionAxis) {
                         hasRegionAxis = isRow ? 'row' : 'col';
                     }
@@ -92,7 +89,7 @@ export async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | n
                 }
                 
                 if (!foundCriterion) {
-                    break;
+                    availableCriteria = shuffle([...criteriaPool]); // Reset if stuck
                 }
             }
 
@@ -136,10 +133,10 @@ export async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | n
                 const rowCandidates = new Set(criteriaMap.get(rowCriterion) || []);
                 const colCandidates = criteriaMap.get(colCriterion) || [];
 
-                const candidates = shuffle(colCandidates.filter(p => rowCandidates.has(p) && !usedPokemonIds.has(p.id)));
+                const candidates = colCandidates.filter(p => rowCandidates.has(p) && !usedPokemonIds.has(p.id));
 
                 if (candidates.length > 0) {
-                    const chosenPokemon = candidates[0];
+                    const chosenPokemon = shuffle(candidates)[0];
                     grid[r][c] = chosenPokemon;
                     usedPokemonIds.add(chosenPokemon.id);
                 } else {

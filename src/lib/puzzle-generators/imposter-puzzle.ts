@@ -36,14 +36,14 @@ export async function createImposterPuzzle(): Promise<Puzzle | null> {
         const rowCriterion = rowAnswers[imposterRow];
         const colCriterion = colAnswers[imposterCol];
     
-        const imposterCandidate = shuffle(allPokemon).find(p => {
+        const imposterCandidates = shuffle(allPokemon).filter(p => {
             if (usedPokemonIds.has(p.id)) return false;
             const pCriteria = getPokemonCriteria(p);
             return !pCriteria.has(rowCriterion) && !pCriteria.has(colCriterion);
         });
     
-        if (imposterCandidate) {
-            grid[imposterRow][imposterCol] = imposterCandidate;
+        if (imposterCandidates.length > 0) {
+            grid[imposterRow][imposterCol] = imposterCandidates[0];
             console.log(`[imposter] Successfully generated puzzle after ${attempt + 1} attempts.`);
             return {
                 grid,
