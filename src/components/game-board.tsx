@@ -76,7 +76,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   const puzzleId = useMemo(() => puzzle.grid.flat().map(p => p?.id).join('-'), [puzzle]);
   
   const gridSize = puzzle.grid.length;
-  const isBlindedLike = mode === 'blinded' || mode === 'scarred';
+  const isBlindedLike = mode === 'blinded';
   const isDarkTheme = isBlindedLike || mode === 'odd-one-out' || mode === 'imposter' || mode === 'miss-matched' || mode === 'timer' || mode === 'ditto';
   const isOddOneOut = mode === 'odd-one-out';
   const isImposter = mode === 'imposter';
@@ -220,7 +220,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
           <form action={formAction} className="space-y-6">
              <input type="hidden" name="puzzle" value={JSON.stringify(puzzle)} />
              {(isOddOneOut || isImposter) && <input type="hidden" name="selectedImposters" value={JSON.stringify(selectedImposters)} />}
-            <div className={cn("grid items-center gap-2 sm:gap-4", isBlindedLike || isOddOneOut || isImposter ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
+            <div className="grid grid-cols-[auto,minmax(0,1fr)] items-center gap-2 sm:gap-4">
               <div />
               <div className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
                 {Array.from({ length: gridSize }).map((_, i) => (

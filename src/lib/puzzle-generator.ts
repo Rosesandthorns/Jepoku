@@ -320,18 +320,17 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         return null;
     }
     
-    // For Odd One Out, we'll stick to a 3x3 for reliability.
-    const gridSize = 3;
+    const gridSize = 5;
     const criteriaPool = NORMAL_CRITERIA;
     const criteriaMap = buildCriteriaMap(allPokemon, criteriaPool);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
-        if (attempt > 0 && attempt % 5000 === 0) {
+         if (attempt > 0 && attempt % 5000 === 0) {
             console.log(`[odd-one-out] Generation attempt: ${attempt}...`);
         }
         
-        // 1. Generate a valid 3x3 base puzzle first.
-        const basePuzzle = await createStandardPuzzle('normal');
+        // 1. Generate a valid 5x5 base puzzle first.
+        const basePuzzle = await createStandardPuzzle('blinded'); // Use the 5x5 generator logic
         if (!basePuzzle) continue;
         
         const { grid, rowAnswers, colAnswers } = basePuzzle;
@@ -410,7 +409,9 @@ async function createImposterPuzzle(): Promise<Puzzle | null> {
         const imposterCoord = { row: imposterRow, col: imposterCol };
         
         const originalPokemon = grid[imposterRow][imposterCol];
-        usedPokemonIds.delete(originalPokemon.id);
+        if (originalPokemon) {
+            usedPokemonIds.delete(originalPokemon.id);
+        }
     
         const rowCriterion = rowAnswers[imposterRow];
         const colCriterion = colAnswers[imposterCol];
@@ -467,7 +468,7 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
     const revealedValue = revealedAxis === 'row' ? solvedPuzzle.rowAnswers[revealedIndex] : solvedPuzzle.colAnswers[revealedIndex];
 
     // 3. Create the shuffled grid
-    const pokemonToShuffle = solutionGrid.flat();
+    const pokemonToShuffle: (Pokemon | null)[] = solutionGrid.flat();
     const emptySlotIndex = Math.floor(Math.random() * (gridSize * gridSize));
     
     // The pokemon at the empty slot index will be the one left out
@@ -576,5 +577,3 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             return createStandardPuzzle('normal');
     }
 }
-
-    
