@@ -3,7 +3,7 @@
 
 import type { Puzzle, Pokemon } from '@/lib/definitions';
 import { getAllPokemonWithDetails } from '@/lib/pokedex';
-import { NORMAL_CRITERIA, HARD_CRITERIA } from '@/lib/criteria';
+import { NORMAL_CRITERIA, HARD_CRITERIA, getPokemonCriteria } from '@/lib/criteria';
 import { shuffle, buildCriteriaMap, MAX_PUZZLE_ATTEMPTS } from './utils';
 
 export async function createDualPuzzle(): Promise<Puzzle | null> {
