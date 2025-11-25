@@ -18,6 +18,7 @@ export interface Pokemon {
   isParadox: boolean;
   height: number;
   weight: number;
+  pokedexEntry: string;
   stats: {
     hp: number;
     attack: number;
@@ -28,7 +29,7 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite' | 'dual';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite' | 'dual' | 'dex';
 
 export type OrderBy = 'pokedex' | 'height' | 'weight' | 'bst' | 'hp' | 'attack' | 'defense' | 'special-attack' | 'special-defense' | 'speed';
 
@@ -58,6 +59,9 @@ export interface Puzzle {
   orderBy?: OrderBy;
   orderDirection?: 'asc' | 'desc';
   correctOrderIds?: number[];
+
+  // For Dex mode
+  dexDisplay?: ('number' | 'entry')[][];
 }
 
 export interface ValidationResult {

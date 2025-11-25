@@ -27,6 +27,12 @@ This document provides a brief overview of each game mode available in Jepoku.
 
 ## Challenge Modes
 
+### Dex Mode
+- **Grid Size**: 3x3
+- **Criteria**: Uses only Pokémon types (e.g., Fire, Water, etc.).
+- **Mechanic**: Instead of Pokémon images, the grid is filled with either a Pokémon's Pokédex number or a flavor text entry from one of its games. You must identify the Pokémon from these text-based clues.
+- **Goal**: Guess the common type for each of the 3 rows and 3 columns.
+
 ### Sprite Mode
 - **Grid Size**: 3x3
 - **Criteria**: Uses the "Normal Mode" criteria set.

@@ -10,6 +10,7 @@ import { TimerModeBoard } from '@/components/timer-mode-board';
 import { OrderModeBoard } from '@/components/order-mode-board';
 import { DittoModeBoard } from '@/components/ditto-mode-board';
 import { DualModeBoard } from '@/components/dual-mode-board';
+import { DexModeBoard } from '@/components/dex-mode-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -38,7 +39,8 @@ function PuzzleLoaderInternal() {
     (modeParam === 'order' ? 'order' : 
     (modeParam === 'ditto' ? 'ditto' : 
     (modeParam === 'sprite' ? 'sprite' : 
-    (modeParam === 'dual' ? 'dual' : 'normal')))))))))));
+    (modeParam === 'dex' ? 'dex' : 
+    (modeParam === 'dual' ? 'dual' : 'normal'))))))))))));
   
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -92,6 +94,10 @@ function PuzzleLoaderInternal() {
   
   if (mode === 'dual') {
     return <DualModeBoard puzzle={puzzle} checkAnswersAction={checkAnswers} mode={mode} />;
+  }
+  
+  if (mode === 'dex') {
+    return <DexModeBoard puzzle={puzzle} checkAnswersAction={checkAnswers} mode={mode} />;
   }
 
   if (mode === 'order') {

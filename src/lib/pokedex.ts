@@ -1,4 +1,5 @@
 
+'use server';
 import 'server-only';
 import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
@@ -55,6 +56,11 @@ interface PokeApiPokemon {
   weight: number;
 }
 
+interface PokeApiFlavorTextEntry {
+    flavor_text: string;
+    language: PokeApiResource;
+}
+
 interface PokeApiSpecies {
     id: number;
     name: string;
@@ -63,6 +69,7 @@ interface PokeApiSpecies {
     generation: PokeApiResource;
     is_legendary: boolean;
     is_mythical: boolean;
+    flavor_text_entries: PokeApiFlavorTextEntry[];
 }
 
 interface PokeApiEvolutionChain {
@@ -188,6 +195,10 @@ export const getAllPokemonWithDetails = unstable_cache(
           const isUltraBeast = abilities.includes('beast-boost');
           const isParadox = abilities.includes('protosynthesis') || abilities.includes('quark-drive');
 
+          const englishFlavorText = speciesData.flavor_text_entries.find(entry => entry.language.name === 'en');
+          const pokedexEntry = englishFlavorText ? englishFlavorText.flavor_text.replace(/[\n\f\r]/g, ' ') : 'No Pokédex entry found.';
+
+
           return {
             id: pokemonData.id,
             name: pokemonData.name,
@@ -206,6 +217,7 @@ export const getAllPokemonWithDetails = unstable_cache(
             isParadox,
             height: pokemonData.height,
             weight: pokemonData.weight,
+            pokedexEntry,
             stats,
           };
         } catch (e) {

@@ -43,6 +43,9 @@ export default function HomePage() {
                     <Link href="/?mode=dual" >Dual Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                    <Link href="/?mode=dex" >Dex Mode</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/?mode=sprite" >Sprite Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
