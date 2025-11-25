@@ -81,14 +81,18 @@ export async function checkAnswers(
   if (mode === 'miss-matched') {
     const playerGridString = formData.get('playerGrid') as string;
     const playerGrid: (Pokemon | null)[][] = JSON.parse(playerGridString);
-    
+
+    // Validate that every Pokémon in the player's grid satisfies the player's submitted criteria.
+    // The empty slot counts as valid for any criteria.
     isPlacementCorrect = true;
     for(let r=0; r < gridSize; r++) {
       for (let c=0; c < gridSize; c++) {
         const playerMon = playerGrid[r][c];
-        if (playerMon) {
+        if (playerMon) { // If there is a Pokémon in the slot
           const pCriteria = getPokemonCriteria(playerMon);
-          if (!pCriteria.has(rowGuesses[r]) || !pCriteria.has(colGuesses[c])) {
+          const rowGuess = rowGuesses[r];
+          const colGuess = colGuesses[c];
+          if (!rowGuess || !colGuess || !pCriteria.has(rowGuess) || !pCriteria.has(colGuess)) {
             isPlacementCorrect = false;
             break;
           }
@@ -97,24 +101,15 @@ export async function checkAnswers(
       if (!isPlacementCorrect) break;
     }
 
-    rowResults = rowGuesses.map((guess, index) => {
-        if (!guess) return null;
-        if (puzzle.revealedCriterion?.axis === 'row' && puzzle.revealedCriterion.index === index) {
-            return guess === puzzle.revealedCriterion.value;
-        }
-        return puzzle.rowAnswers[index] === guess;
-    });
+    // Since we check placement against the submitted criteria, criteria are correct if placement is correct.
+    isCriteriaCorrect = isPlacementCorrect;
+    isCorrect = isPlacementCorrect;
 
-    colResults = colGuesses.map((guess, index) => {
-        if (!guess) return null;
-        if (puzzle.revealedCriterion?.axis === 'col' && puzzle.revealedCriterion.index === index) {
-            return guess === puzzle.revealedCriterion.value;
-        }
-        return puzzle.colAnswers[index] === guess;
-    });
+    // Provide feedback on which guesses were right, comparing against the original solution
+    // This doesn't affect the win state, it's just for UI feedback.
+    rowResults = rowGuesses.map((guess, index) => guess ? puzzle.rowAnswers.includes(guess) : null);
+    colResults = colGuesses.map((guess, index) => guess ? puzzle.colAnswers.includes(guess) : null);
 
-    isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);
-    isCorrect = isCriteriaCorrect && isPlacementCorrect;
 
     return {
       rowResults,

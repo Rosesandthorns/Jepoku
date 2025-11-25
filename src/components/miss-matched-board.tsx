@@ -123,6 +123,7 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
   };
   
   const getSelectClass = (isCorrect: boolean | null) => {
+    if (state.isCorrect === undefined) return ''; // Before first submission
     if (isCorrect === true) return 'border-green-500 ring-green-500';
     if (isCorrect === false) return 'border-red-500 ring-red-500';
     return '';
@@ -133,6 +134,7 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
   };
 
   const renderResultIcon = (isCorrect: boolean | null) => {
+    if (state.isCorrect === undefined) return null; // Before first submission
     if (isCorrect === true) return <Check className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />;
     if (isCorrect === false) return <X className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500" />;
     return null;
@@ -256,7 +258,6 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
               {state.isCorrect ? (
                 <div className="text-center space-y-4">
                     <p className="text-2xl font-bold text-green-600">You solved it!</p>
-                     {state.isPlacementCorrect === false && <p className="text-sm text-yellow-400">Your criteria were correct, but Pokémon placement was wrong!</p>}
                     <Button asChild size="lg" className="w-full">
                         <a href={`/?mode=${mode}`}>Play Next Puzzle</a>
                     </Button>
@@ -265,7 +266,7 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
                 <SubmitButton isCorrect={state.isCorrect} />
               )}
                {state.isCorrect === false && state.isPlacementCorrect === false && (
-                <p className="mt-2 text-center text-sm text-red-400">Pokémon placement is incorrect. Keep trying!</p>
+                <p className="mt-2 text-center text-sm text-red-400">Pokémon placement is incorrect for the selected criteria. Keep trying!</p>
                )}
             </div>
           </form>
