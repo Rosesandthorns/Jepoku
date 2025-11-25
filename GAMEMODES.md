@@ -19,6 +19,12 @@ This document provides a brief overview of each game mode available in Jepoku.
 - **Criteria**: The most difficult set of criteria, focusing on nuanced details like base stat values (e.g., "Above 100 Speed"), specific and less common moves/abilities, and Base Stat Totals (BST).
 - **Goal**: Guess the common trait for each of the 3 rows and 3 columns.
 
+### Dual Mode
+- **Grid Size**: 3x3
+- **Criteria**: A combination of Normal and Hard criteria.
+- **Mechanic**: Each row and column has *two* criteria that you must guess: one from the "Normal" pool and one from the "Hard" pool. Each Pokémon on the grid must satisfy all four criteria for its position (two for its row, two for its column).
+- **Goal**: Guess all 12 criteria correctly.
+
 ## Challenge Modes
 
 ### Sprite Mode

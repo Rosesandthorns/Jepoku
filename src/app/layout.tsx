@@ -28,7 +28,7 @@ export default function RootLayout({
       </head>
       <body className={cn(
         "font-body antialiased transition-colors duration-500",
-        mode === 'hard' ? "bg-red-950/20" : "",
+        mode === 'hard' || mode === 'dual' ? "bg-red-950/20" : "",
         mode === 'blinded' || mode === 'miss-matched' || mode === 'imposter' || mode === 'timer' || mode === 'order' || mode === 'sprite' ? "bg-gray-900/90" : "",
       )}>
         {children}

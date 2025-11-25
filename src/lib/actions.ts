@@ -44,6 +44,29 @@ export async function checkAnswers(
         accuracy,
     };
   }
+  
+  if (mode === 'dual') {
+    const rowGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`row-${i}`) as string);
+    const colGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`col-${i}`) as string);
+    const rowGuessesHard = Array.from({ length: gridSize }, (_, i) => formData.get(`row-hard-${i}`) as string);
+    const colGuessesHard = Array.from({ length: gridSize }, (_, i) => formData.get(`col-hard-${i}`) as string);
+
+    const rowResults = rowGuesses.map((guess, index) => guess ? guess === puzzle.rowAnswers[index] : null);
+    const colResults = colGuesses.map((guess, index) => guess ? guess === puzzle.colAnswers[index] : null);
+    const rowResultsHard = rowGuessesHard.map((guess, index) => guess ? guess === puzzle.rowAnswersHard![index] : null);
+    const colResultsHard = colGuessesHard.map((guess, index) => guess ? guess === puzzle.colAnswersHard![index] : null);
+    
+    const isCriteriaCorrect = [...rowResults, ...colResults, ...rowResultsHard, ...colResultsHard].every(res => res === true);
+    
+    return {
+      rowResults,
+      colResults,
+      rowResultsHard,
+      colResultsHard,
+      isCriteriaCorrect,
+      isCorrect: isCriteriaCorrect,
+    };
+  }
 
   const rowGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`row-${i}`) as string);
   const colGuesses = Array.from({ length: gridSize }, (_, i) => formData.get(`col-${i}`) as string);
@@ -147,7 +170,7 @@ export async function checkAnswers(
       isCorrect,
     };
 
-  } else { // Normal, Hard, Easy, Blinded
+  } else { // Normal, Hard, Easy, Blinded, Sprite, Timer, Ditto
     rowResults = rowGuesses.map((guess, index) => guess ? guess === puzzle.rowAnswers[index] : null);
     colResults = colGuesses.map((guess, index) => guess ? guess === puzzle.colAnswers[index] : null);
     isCriteriaCorrect = [...rowResults, ...colResults].every(res => res === true);

@@ -28,7 +28,7 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite' | 'dual';
 
 export type OrderBy = 'pokedex' | 'height' | 'weight' | 'bst' | 'hp' | 'attack' | 'defense' | 'special-attack' | 'special-defense' | 'speed';
 
@@ -39,6 +39,10 @@ export interface Puzzle {
   mode: JepokuMode;
   visibleMask?: boolean[][];
   oddOneOutCoords?: {row: number, col: number}[];
+  
+  // For Dual Mode
+  rowAnswersHard?: string[];
+  colAnswersHard?: string[];
 
   // For Miss-Matched mode
   shuffledGrid?: (Pokemon | null)[][];
@@ -61,6 +65,10 @@ export interface ValidationResult {
   colResults: (boolean | null)[];
   isCriteriaCorrect: boolean;
   isCorrect: boolean;
+  
+  // For Dual Mode
+  rowResultsHard?: (boolean | null)[];
+  colResultsHard?: (boolean | null)[];
 
   // For Odd-one-out
   oddOneOutSelectionResults?: (boolean | null)[][];

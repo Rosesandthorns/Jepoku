@@ -7,6 +7,7 @@ import { createOddOneOutPuzzle } from './puzzle-generators/odd-one-out-puzzle';
 import { createImposterPuzzle } from './puzzle-generators/imposter-puzzle';
 import { createMissMatchedPuzzle } from './puzzle-generators/miss-matched-puzzle';
 import { createOrderPuzzle } from './puzzle-generators/order-puzzle';
+import { createDualPuzzle } from './puzzle-generators/dual-puzzle';
 
 
 export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
@@ -19,6 +20,8 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             return createMissMatchedPuzzle();
         case 'order':
             return createOrderPuzzle();
+        case 'dual':
+            return createDualPuzzle();
         case 'easy':
         case 'normal':
         case 'hard':

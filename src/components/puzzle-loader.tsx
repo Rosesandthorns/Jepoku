@@ -9,6 +9,7 @@ import { MissMatchedBoard } from '@/components/miss-matched-board';
 import { TimerModeBoard } from '@/components/timer-mode-board';
 import { OrderModeBoard } from '@/components/order-mode-board';
 import { DittoModeBoard } from '@/components/ditto-mode-board';
+import { DualModeBoard } from '@/components/dual-mode-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -36,13 +37,14 @@ function PuzzleLoaderInternal() {
     (modeParam === 'timer' ? 'timer' : 
     (modeParam === 'order' ? 'order' : 
     (modeParam === 'ditto' ? 'ditto' : 
-    (modeParam === 'sprite' ? 'sprite' : 'normal')))))))));
+    (modeParam === 'sprite' ? 'sprite' : 
+    (modeParam === 'dual' ? 'dual' : 'normal')))))))))));
   
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (mode === 'timer' || mode === 'ditto') {
+    if (['timer', 'ditto'].includes(mode)) {
       setPuzzle(null); // These modes manage their own puzzle loading
       return;
     }
@@ -86,6 +88,10 @@ function PuzzleLoaderInternal() {
   
   if (mode === 'miss-matched') {
     return <MissMatchedBoard puzzle={puzzle} checkAnswersAction={checkAnswers} mode={mode} />;
+  }
+  
+  if (mode === 'dual') {
+    return <DualModeBoard puzzle={puzzle} checkAnswersAction={checkAnswers} mode={mode} />;
   }
 
   if (mode === 'order') {
