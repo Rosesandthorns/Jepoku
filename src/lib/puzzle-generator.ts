@@ -221,8 +221,8 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             for (const r of rowAnswers) {
                 for (const c of colAnswers) {
                     const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
-                        (pair[0].toLowerCase() === r.toLowerCase() && pair[1].toLowerCase() === c.toLowerCase()) || 
-                        (pair[0].toLowerCase() === c.toLowerCase() && pair[1].toLowerCase() === r.toLowerCase())
+                        (pair[0].toUpperCase() === r.toUpperCase() && pair[1].toUpperCase() === c.toUpperCase()) || 
+                        (pair[0].toUpperCase() === c.toUpperCase() && pair[1].toUpperCase() === r.toUpperCase())
                     );
                     if (isImpossible) {
                         hasImpossiblePair = true;
@@ -345,8 +345,8 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         for (const r of rowAnswers) {
             for (const c of colAnswers) {
                 const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
-                    (pair[0].toLowerCase() === r.toLowerCase() && pair[1].toLowerCase() === c.toLowerCase()) || 
-                    (pair[0].toLowerCase() === c.toLowerCase() && pair[1].toLowerCase() === r.toLowerCase())
+                    (pair[0].toUpperCase() === r.toUpperCase() && pair[1].toUpperCase() === c.toUpperCase()) || 
+                    (pair[0].toUpperCase() === c.toUpperCase() && pair[1].toUpperCase() === r.toUpperCase())
                 );
                 if (isImpossible) {
                     hasImpossiblePair = true;
@@ -531,9 +531,7 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
     console.log("[miss-matched] Successfully generated puzzle.");
 
     return {
-        grid: solvedPuzzle.grid,
-        rowAnswers: solvedPuzzle.rowAnswers,
-        colAnswers: solvedPuzzle.colAnswers,
+        ...solvedPuzzle,
         mode: 'miss-matched',
         shuffledGrid,
         solutionGrid,

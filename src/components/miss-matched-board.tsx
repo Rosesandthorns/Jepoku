@@ -76,7 +76,7 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
   const [emptySlot, setEmptySlot] = useState<{row: number, col: number}>(findInitialEmptySlot());
 
   const [score, setScore] = useState(0);
-  const puzzleId = useMemo(() => puzzle.solutionGrid!.flat().map(p => p?.id).sort().join('-'), [puzzle]);
+  const puzzleId = useMemo(() => puzzle.solutionGrid?.flat().map(p => p?.id).sort().join('-') ?? '', [puzzle]);
   const gridSize = puzzle.grid.length;
   const criteriaPool = NORMAL_CRITERIA;
 
