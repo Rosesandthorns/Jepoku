@@ -5,16 +5,16 @@ import { getAllPokemonWithDetails } from './pokedex';
 import type { Puzzle, Pokemon, JepokuMode, OrderBy } from './definitions';
 import { NORMAL_CRITERIA, HARD_CRITERIA, EASY_CRITERIA } from './criteria';
 
-const MAX_PUZZLE_ATTEMPTS = 20000;
+const MAX_PUZZLE_ATTEMPTS = 50000;
 
 const REGIONS = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Alola', 'Galar', 'Paldea'];
 
 const IMPOSSIBLE_TYPE_PAIRS: [string, string][] = [
-    ['Normal', 'Bug'], ['Normal', 'Ice'], ['Normal', 'Rock'], ['Normal', 'Steel'],
+    ['Normal', 'Ice'], ['Normal', 'Bug'], ['Normal', 'Rock'], ['Normal', 'Steel'],
     ['Fire', 'Fairy'],
     ['Ice', 'Poison'],
     ['Ground', 'Fairy'],
-    ['Bug', 'Dragon'],
+    ['Bug', 'Dragon'], ['Bug', 'Ghost'],
     ['Rock', 'Ghost']
 ];
 
@@ -251,30 +251,46 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             colAnswers = allSelected.slice(gridSize, gridSize * 2);
 
         } else if (isBlindedLike) {
-            const regionsCanBeInRows = Math.random() > 0.5;
-            const poolWithRegions = shuffle(criteriaPool.filter(c => !REGIONS.includes(c) || Math.random() > 0.4));
-            const poolWithoutRegions = shuffle(criteriaPool.filter(c => !REGIONS.includes(c)));
+            const types = criteriaPool.filter(c => !REGIONS.includes(c) && !c.startsWith('Has') && !c.startsWith('Knows') && !c.startsWith('Learns') && !['Mega', 'Legendary', 'Mythical', 'Ultra Beast', 'Paradox', 'Can Evolve', 'Final Evolution', 'Partner Pokemon'].includes(c));
+            const otherCriteria = criteriaPool.filter(c => !types.includes(c));
 
-            if (regionsCanBeInRows) {
-                rowAnswers = poolWithRegions.slice(0, gridSize);
-                colAnswers = poolWithoutRegions.slice(0, gridSize);
-            } else {
-                rowAnswers = poolWithoutRegions.slice(0, gridSize);
-                colAnswers = poolWithRegions.slice(0, gridSize);
-            }
+            let tempRowAnswers = shuffle(otherCriteria).slice(0, gridSize);
+            let tempColAnswers: string[] = [];
 
-            let impossiblePairFound = false;
-            for (const rAnswer of rowAnswers) {
-                for (const cAnswer of colAnswers) {
-                     const pair: [string, string] = [rAnswer, cAnswer].sort() as [string, string];
-                     if (IMPOSSIBLE_TYPE_PAIRS.some(p => p[0] === pair[0] && p[1] === pair[1])) {
-                        impossiblePairFound = true;
+            let availableTypes = shuffle(types);
+
+            for (let i = 0; i < gridSize; i++) {
+                let foundType = false;
+                for (let j = 0; j < availableTypes.length; j++) {
+                    const candidateType = availableTypes[j];
+                    
+                    const isImpossible = tempRowAnswers.some(rowCrit => {
+                        const pair: [string, string] = [rowCrit, candidateType].sort() as [string, string];
+                        return IMPOSSIBLE_TYPE_PAIRS.some(p => p[0] === pair[0] && p[1] === pair[1]);
+                    });
+
+                    if (!isImpossible) {
+                        tempColAnswers.push(candidateType);
+                        availableTypes.splice(j, 1);
+                        foundType = true;
                         break;
                     }
                 }
-                if (impossiblePairFound) break;
+                if (!foundType) {
+                    tempColAnswers = []; 
+                    break;
+                }
             }
-            if (impossiblePairFound) continue;
+
+            if (tempColAnswers.length !== gridSize) continue;
+
+            if (Math.random() > 0.5) {
+                rowAnswers = tempRowAnswers;
+                colAnswers = tempColAnswers;
+            } else {
+                rowAnswers = tempColAnswers;
+                colAnswers = tempRowAnswers;
+            }
         } else {
             const shuffledCriteria = shuffle([...criteriaPool]);
             if (shuffledCriteria.length < gridSize * 2) return null;
