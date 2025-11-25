@@ -1,3 +1,4 @@
+
 import 'server-only';
 import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
@@ -220,6 +221,6 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen9-hard-mode-v2'], // version bump for height/weight
+  ['all-pokemon-with-details-gen9-hard-mode-v3'], // version bump for cache invalidation
   { revalidate: 3600 * 24 } // Revalidate once a day
 );
