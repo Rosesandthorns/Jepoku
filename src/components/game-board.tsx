@@ -222,7 +222,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
              {(isOddOneOut || isImposter) && <input type="hidden" name="selectedImposters" value={JSON.stringify(selectedImposters)} />}
             <div className={cn("grid items-center gap-2 sm:gap-4", isBlindedLike || isOddOneOut || isImposter ? "grid-cols-[auto,minmax(0,1fr)]" : "grid-cols-[auto,1fr]")}>
               <div />
-              <div className={cn("grid gap-2 sm:gap-4", `grid-cols-${gridSize}`)} style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
+              <div className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
                 {Array.from({ length: gridSize }).map((_, i) => (
                   <div key={`col-input-${i}`} className="relative">
                     <Select name={`col-${i}`} disabled={state.isCorrect}>
@@ -247,7 +247,7 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                 ))}
               </div>
 
-              <div className={cn("grid gap-2 sm:gap-4", `grid-rows-${gridSize}`)} style={{ gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))` }}>
+              <div className="grid gap-2 sm:gap-4" style={{ gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))` }}>
                 {Array.from({ length: gridSize }).map((_, i) => (
                   <div key={`row-input-${i}`} className="relative flex items-center h-full">
                     <Select name={`row-${i}`} disabled={state.isCorrect}>
@@ -274,7 +274,6 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
 
               <div className={cn(
                   "grid gap-2 sm:gap-4 transition-opacity duration-700 ease-in-out",
-                  `grid-cols-${gridSize}`,
                   showPuzzle ? 'opacity-100' : 'opacity-0'
                 )}
                 style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
