@@ -40,6 +40,9 @@ export default function HomePage() {
                     <Link href="/?mode=hard" >Hard Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                    <Link href="/?mode=sprite" >Sprite Mode</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/?mode=timer" >Timer Mode</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

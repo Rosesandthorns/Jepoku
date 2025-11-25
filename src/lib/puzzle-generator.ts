@@ -25,6 +25,7 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         case 'blinded':
         case 'timer':
         case 'ditto':
+        case 'sprite':
              return createStandardPuzzle(mode);
         default:
             return createStandardPuzzle('normal');

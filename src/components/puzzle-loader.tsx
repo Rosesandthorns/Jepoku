@@ -35,7 +35,8 @@ function PuzzleLoaderInternal() {
     (modeParam === 'miss-matched' ? 'miss-matched' : 
     (modeParam === 'timer' ? 'timer' : 
     (modeParam === 'order' ? 'order' : 
-    (modeParam === 'ditto' ? 'ditto' : 'normal'))))))));
+    (modeParam === 'ditto' ? 'ditto' : 
+    (modeParam === 'sprite' ? 'sprite' : 'normal')))))))));
   
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();

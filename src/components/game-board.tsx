@@ -77,7 +77,8 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
   
   const gridSize = puzzle.grid.length;
   const isBlindedLike = mode === 'blinded';
-  const isDarkTheme = isBlindedLike || mode === 'odd-one-out' || mode === 'imposter' || mode === 'miss-matched' || mode === 'timer' || mode === 'ditto';
+  const isSpriteMode = mode === 'sprite';
+  const isDarkTheme = isBlindedLike || mode === 'odd-one-out' || mode === 'imposter' || mode === 'miss-matched' || mode === 'timer' || mode === 'ditto' || isSpriteMode;
   const isOddOneOut = mode === 'odd-one-out';
   const isImposter = mode === 'imposter';
   const isMetaMode = mode === 'timer' || mode === 'ditto';
@@ -303,12 +304,16 @@ export const GameBoard: FC<GameBoardProps> = ({ puzzle, checkAnswersAction, mode
                                   alt={pokemonToShow.name}
                                   fill
                                   sizes="(max-width: 640px) 15vw, 128px"
-                                  className="object-contain transition-transform duration-300 hover:scale-110"
+                                  className={cn(
+                                    "object-contain transition-transform duration-300 hover:scale-110",
+                                    isSpriteMode && !state.isCorrect && "brightness-0",
+                                    state.isCorrect && isSpriteMode && "brightness-100 transition-all duration-1000"
+                                  )}
                                 />
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="capitalize">{pokemonToShow.name}</p>
+                              <p className="capitalize">{ isSpriteMode && !state.isCorrect ? '???' : pokemonToShow.name}</p>
                             </TooltipContent>
                           </Tooltip>
                         ) : (

@@ -21,6 +21,12 @@ This document provides a brief overview of each game mode available in Jepoku.
 
 ## Challenge Modes
 
+### Sprite Mode
+- **Grid Size**: 3x3
+- **Criteria**: Uses the "Normal Mode" criteria set.
+- **Mechanic**: The Pokémon on the grid are displayed only as silhouettes. You must identify them and their common traits based on their shape alone.
+- **Goal**: Guess the common trait for each of the 3 rows and 3 columns.
+
 ### Timer Mode
 - **Grid Size**: 3x3 (multiple puzzles)
 - **Criteria**: Uses the "Easy Mode" criteria set.
