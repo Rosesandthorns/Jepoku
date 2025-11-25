@@ -190,6 +190,7 @@ function buildCriteriaMap(pokemonList: Pokemon[], criteriaPool: string[]): Map<s
 }
 
 async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
+    console.log(`--- Generating new puzzle for mode: ${mode} ---`);
     let allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
         console.error("No Pokemon data available.");
@@ -221,6 +222,9 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     const criteriaMap = buildCriteriaMap(allPokemon, criteriaPool);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
+        if (attempt > 0 && attempt % 5000 === 0) {
+            console.log(`[${mode}] Generation attempt: ${attempt}...`);
+        }
         let rowAnswers: string[];
         let colAnswers: string[];
 
@@ -318,6 +322,7 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         }
 
         if (success) {
+            console.log(`[${mode}] Successfully generated puzzle after ${attempt + 1} attempts.`);
             const puzzle: Puzzle = {
                 grid: grid as Pokemon[][],
                 rowAnswers,
@@ -333,11 +338,12 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         }
     }
 
-    console.error(`Failed to generate a ${mode} puzzle after multiple retries.`);
+    console.error(`[${mode}] Failed to generate a puzzle after ${MAX_PUZZLE_ATTEMPTS} attempts.`);
     return null;
 }
 
 async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
+    console.log(`--- Generating new puzzle for mode: odd-one-out ---`);
     let allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
         console.error("No Pokemon data available.");
@@ -349,6 +355,9 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
     const criteriaMap = buildCriteriaMap(allPokemon, criteriaPool);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
+        if (attempt > 0 && attempt % 5000 === 0) {
+            console.log(`[odd-one-out] Generation attempt: ${attempt}...`);
+        }
         const shuffledCriteria = shuffle([...criteriaPool]);
         if (shuffledCriteria.length < gridSize * 2) return null;
         const rowAnswers = shuffledCriteria.slice(0, gridSize);
@@ -433,6 +442,7 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         }
         if (!impostersPlaced) continue;
 
+        console.log(`[odd-one-out] Successfully generated puzzle after ${attempt + 1} attempts.`);
         return {
             grid: grid as Pokemon[][],
             rowAnswers,
@@ -442,7 +452,7 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         };
     }
     
-    console.error("Failed to generate an Odd One Out puzzle after multiple retries.");
+    console.error(`[odd-one-out] Failed to generate a puzzle after ${MAX_PUZZLE_ATTEMPTS} attempts.`);
     return null;
 }
 
