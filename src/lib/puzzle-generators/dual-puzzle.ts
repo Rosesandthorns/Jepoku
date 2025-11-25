@@ -3,12 +3,12 @@
 
 import type { Puzzle, Pokemon } from '@/lib/definitions';
 import { getAllPokemonWithDetails } from '@/lib/pokedex';
-import { NORMAL_CRITERIA, HARD_CRITERIA } from '@/lib/criteria';
-import { shuffle, buildCriteriaMap, MAX_PUZZLE_ATTEMPTS } from './utils';
+import { getPokemonCriteria, NORMAL_CRITERIA, HARD_CRITERIA } from '@/lib/criteria';
+import { shuffle, MAX_PUZZLE_ATTEMPTS } from './utils';
 
 export async function createDualPuzzle(): Promise<Puzzle | null> {
     console.log(`--- Generating new puzzle for mode: dual ---`);
-    let allPokemon = await getAllPokemonWithDetails();
+    const allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
         console.error("No Pokemon data available.");
         return null;
@@ -17,68 +17,77 @@ export async function createDualPuzzle(): Promise<Puzzle | null> {
     const gridSize = 3;
     const normalCriteriaPool = NORMAL_CRITERIA.filter(c => !HARD_CRITERIA.includes(c));
     const hardCriteriaPool = HARD_CRITERIA;
-    
-    const criteriaMap = buildCriteriaMap(allPokemon);
 
-    for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
-        if (attempt > 0 && attempt % 2000 === 0) {
-            console.log(`[dual] Generation attempt: ${attempt}...`);
+    for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS / 10; attempt++) {
+        if (attempt > 0 && attempt % 100 === 0) {
+             console.log(`[dual] Generation attempt: ${attempt}...`);
         }
+
+        const shuffledPokemon = shuffle(allPokemon);
+        const selectedPokemon = shuffledPokemon.slice(0, gridSize * gridSize);
         
-        const rowAnswersNormal = shuffle([...normalCriteriaPool]).slice(0, gridSize);
-        const colAnswersNormal = shuffle([...normalCriteriaPool]).slice(gridSize, gridSize * 2);
-        const rowAnswersHard = shuffle([...hardCriteriaPool]).slice(0, gridSize);
-        const colAnswersHard = shuffle([...hardCriteriaPool]).slice(gridSize, gridSize * 2);
-
-        const allAnswers = new Set([
-            ...rowAnswersNormal, ...colAnswersNormal, 
-            ...rowAnswersHard, ...colAnswersHard
-        ]);
-        if (allAnswers.size !== gridSize * 4) {
-            continue; // Ensure all 12 criteria are unique
+        if (selectedPokemon.length < gridSize * gridSize) {
+            continue; // Not enough Pokemon
         }
 
-        const grid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
-        const usedPokemonIds = new Set<number>();
+        const grid: Pokemon[][] = [];
+        for (let i = 0; i < gridSize; i++) {
+            grid.push(selectedPokemon.slice(i * gridSize, (i + 1) * gridSize));
+        }
+
+        const rowAnswersNormal: string[] = [];
+        const rowAnswersHard: string[] = [];
+        const colAnswersNormal: string[] = [];
+        const colAnswersHard: string[] = [];
+
         let success = true;
 
+        // Find row criteria
         for (let r = 0; r < gridSize; r++) {
-            for (let c = 0; c < gridSize; c++) {
-                const criteria = [
-                    rowAnswersNormal[r], colAnswersNormal[c],
-                    rowAnswersHard[r], colAnswersHard[c]
-                ];
+            const rowPokemon = grid[r];
+            const commonCriteria = rowPokemon.map(getPokemonCriteria).reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+            
+            const validNormal = shuffle([...commonCriteria].filter(c => normalCriteriaPool.includes(c)));
+            const validHard = shuffle([...commonCriteria].filter(c => hardCriteriaPool.includes(c)));
 
-                const candidateSets = criteria.map(crit => criteriaMap.get(crit) || []);
-                if (candidateSets.some(set => set.length === 0)) {
-                    success = false;
-                    break;
-                }
-
-                // Find intersection of all four sets
-                const intersection = candidateSets.reduce((acc, currSet) => {
-                    const currIds = new Set(currSet.map(p => p.id));
-                    return acc.filter(p => currIds.has(p.id));
-                });
-                
-                const finalCandidates = intersection.filter(p => !usedPokemonIds.has(p.id));
-
-                if (finalCandidates.length > 0) {
-                    const chosenPokemon = shuffle(finalCandidates)[0];
-                    grid[r][c] = chosenPokemon;
-                    usedPokemonIds.add(chosenPokemon.id);
-                } else {
-                    success = false;
-                    break;
-                }
+            if (validNormal.length > 0 && validHard.length > 0) {
+                rowAnswersNormal.push(validNormal[0]);
+                rowAnswersHard.push(validHard[0]);
+            } else {
+                success = false;
+                break;
             }
-            if (!success) break;
         }
+        if (!success) continue;
 
-        if (success) {
+        // Find column criteria
+        for (let c = 0; c < gridSize; c++) {
+            const colPokemon = grid.map(row => row[c]);
+            const commonCriteria = colPokemon.map(getPokemonCriteria).reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+
+            const validNormal = shuffle([...commonCriteria].filter(c => normalCriteriaPool.includes(c)));
+            const validHard = shuffle([...commonCriteria].filter(c => hardCriteriaPool.includes(c)));
+
+            if (validNormal.length > 0 && validHard.length > 0) {
+                colAnswersNormal.push(validNormal[0]);
+                colAnswersHard.push(validHard[0]);
+            } else {
+                success = false;
+                break;
+            }
+        }
+        if (!success) continue;
+
+        // Check for uniqueness of all 12 criteria
+        const allFoundCriteria = new Set([
+            ...rowAnswersNormal, ...rowAnswersHard,
+            ...colAnswersNormal, ...colAnswersHard
+        ]);
+
+        if (allFoundCriteria.size === gridSize * 4) {
             console.log(`[dual] Successfully generated puzzle after ${attempt + 1} attempts.`);
             return {
-                grid: grid as Pokemon[][],
+                grid,
                 rowAnswers: rowAnswersNormal,
                 colAnswers: colAnswersNormal,
                 rowAnswersHard: rowAnswersHard,
@@ -88,6 +97,6 @@ export async function createDualPuzzle(): Promise<Puzzle | null> {
         }
     }
 
-    console.error(`[dual] Failed to generate a puzzle after ${MAX_PUZZLE_ATTEMPTS} attempts.`);
+    console.error(`[dual] Failed to generate a puzzle after ${MAX_PUZZLE_ATTEMPTS / 10} attempts.`);
     return null;
 }
