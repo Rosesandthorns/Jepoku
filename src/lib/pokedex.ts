@@ -115,7 +115,7 @@ export const getPokemonTypes = unstable_cache(
     }
   },
   ['pokemon-types'],
-  { revalidate: 3600 * 24 } // Revalidate once a day
+  { revalidate: 3600 } // Revalidate once an hour
 );
 
 async function hasMegaEvolution(pokemonName: string): Promise<boolean> {
@@ -221,6 +221,6 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen9-hard-mode-v3'], // version bump for cache invalidation
-  { revalidate: 3600 * 24 } // Revalidate once a day
+  ['all-pokemon-with-details-gen9-hard-mode-v3'],
+  { revalidate: 3600 } // Revalidate once an hour
 );
