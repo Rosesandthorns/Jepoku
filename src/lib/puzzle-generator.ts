@@ -172,6 +172,22 @@ function generateVisibilityMask(gridSize: number): boolean[][] {
     return mask;
 }
 
+function buildCriteriaMap(pokemonList: Pokemon[], criteriaPool: string[]): Map<string, Pokemon[]> {
+    const map = new Map<string, Pokemon[]>();
+    for (const criterion of criteriaPool) {
+        map.set(criterion, []);
+    }
+
+    for (const pokemon of pokemonList) {
+        const criteria = getPokemonCriteria(pokemon);
+        for (const criterion of criteria) {
+            if (map.has(criterion)) {
+                map.get(criterion)!.push(pokemon);
+            }
+        }
+    }
+    return map;
+}
 
 async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
     let allPokemon = await getAllPokemonWithDetails();
@@ -203,7 +219,7 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             criteriaPool = NORMAL_CRITERIA;
     }
     
-    const shuffledPokemon = shuffle(allPokemon);
+    const criteriaMap = buildCriteriaMap(allPokemon, criteriaPool);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
         let rowAnswers: string[];
@@ -281,11 +297,10 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 const rowCriterion = rowAnswers[r];
                 const colCriterion = colAnswers[c];
 
-                const candidates = shuffledPokemon.filter(p => {
-                    if (usedPokemonIds.has(p.id)) return false;
-                    const pCriteria = getPokemonCriteria(p);
-                    return pCriteria.has(rowCriterion) && pCriteria.has(colCriterion);
-                });
+                const rowCandidates = new Set(criteriaMap.get(rowCriterion) || []);
+                const colCandidates = criteriaMap.get(colCriterion) || [];
+
+                const candidates = shuffle(colCandidates.filter(p => rowCandidates.has(p) && !usedPokemonIds.has(p.id)));
 
                 if (candidates.length > 0) {
                     const chosenPokemon = candidates[0];
@@ -320,7 +335,7 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
 }
 
 async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
-    const allPokemon = await getAllPokemonWithDetails();
+    let allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
         console.error("No Pokemon data available.");
         return null;
@@ -328,7 +343,7 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
 
     const gridSize = 5;
     const criteriaPool = NORMAL_CRITERIA;
-    const shuffledPokemon = shuffle(allPokemon);
+    const criteriaMap = buildCriteriaMap(allPokemon, criteriaPool);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
         const shuffledCriteria = shuffle([...criteriaPool]);
@@ -348,11 +363,10 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
                 const rowCriterion = rowAnswers[r];
                 const colCriterion = colAnswers[c];
 
-                const candidates = shuffledPokemon.filter(p => {
-                    if (usedPokemonIds.has(p.id)) return false;
-                    const pCriteria = getPokemonCriteria(p);
-                    return pCriteria.has(rowCriterion) && pCriteria.has(colCriterion);
-                });
+                const rowCandidates = new Set(criteriaMap.get(rowCriterion) || []);
+                const colCandidates = criteriaMap.get(colCriterion) || [];
+
+                const candidates = shuffle(colCandidates.filter(p => rowCandidates.has(p) && !usedPokemonIds.has(p.id)));
 
                 if (candidates.length > 0) {
                     const chosenPokemon = candidates[0];
@@ -382,13 +396,11 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
             usedPokemonIds.delete(originalPokemonId);
 
 
-            const imposterCandidates = shuffledPokemon.filter(p => {
+            const imposterCandidates = shuffle(allPokemon.filter(p => {
                 if (usedPokemonIds.has(p.id)) return false;
                 const pCriteria = getPokemonCriteria(p);
-                // An imposter can fit ONE of the criteria, but not both. Or neither.
-                // This makes it harder. Let's go with NOT fitting EITHER.
                 return !pCriteria.has(rowCriterion) && !pCriteria.has(colCriterion);
-            });
+            }));
 
             if (imposterCandidates.length > 0) {
                 const chosenImposter = imposterCandidates[0];
@@ -453,8 +465,7 @@ async function createImposterPuzzle(): Promise<Puzzle | null> {
     const colCriterion = colAnswers[imposterCol];
 
     // 3. Find an imposter Pokémon
-    const shuffledPokemon = shuffle(allPokemon);
-    const imposterCandidate = shuffledPokemon.find(p => {
+    const imposterCandidate = shuffle(allPokemon).find(p => {
         if (usedPokemonIds.has(p.id)) return false;
         const pCriteria = getPokemonCriteria(p);
         // Must not fit EITHER criterion
@@ -606,9 +617,7 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         case 'blinded':
         case 'timer':
         case 'ditto':
-            return createStandardPuzzle(mode);
         case 'scarred':
-             console.warn("Scarred mode is under development and may be unstable.");
              return createStandardPuzzle(mode);
         default:
             return createStandardPuzzle('normal');
