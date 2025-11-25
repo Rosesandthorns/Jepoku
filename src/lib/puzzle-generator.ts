@@ -200,15 +200,14 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         allPokemon = allPokemon.filter(p => p.name !== 'ditto');
     }
 
-    const isBlindedLike = mode === 'blinded' || mode === 'scarred';
-    const isHardLike = mode === 'hard' || mode === 'imposter' || mode === 'scarred';
+    const isBlindedLike = mode === 'blinded';
+    const isHardLike = mode === 'hard' || mode === 'imposter';
     const gridSize = isBlindedLike ? 6 : 3;
 
     let criteriaPool: string[];
     switch (mode) {
         case 'hard':
         case 'imposter':
-        case 'scarred':
             criteriaPool = [...HARD_CRITERIA, ...NORMAL_CRITERIA];
             break;
         case 'easy':
@@ -250,47 +249,6 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             rowAnswers = allSelected.slice(0, gridSize);
             colAnswers = allSelected.slice(gridSize, gridSize * 2);
 
-        } else if (isBlindedLike) {
-            const types = criteriaPool.filter(c => !REGIONS.includes(c) && !c.startsWith('Has') && !c.startsWith('Knows') && !c.startsWith('Learns') && !['Mega', 'Legendary', 'Mythical', 'Ultra Beast', 'Paradox', 'Can Evolve', 'Final Evolution', 'Partner Pokemon'].includes(c));
-            const otherCriteria = criteriaPool.filter(c => !types.includes(c));
-
-            let tempRowAnswers = shuffle(otherCriteria).slice(0, gridSize);
-            let tempColAnswers: string[] = [];
-
-            let availableTypes = shuffle(types);
-
-            for (let i = 0; i < gridSize; i++) {
-                let foundType = false;
-                for (let j = 0; j < availableTypes.length; j++) {
-                    const candidateType = availableTypes[j];
-                    
-                    const isImpossible = tempRowAnswers.some(rowCrit => {
-                        const pair: [string, string] = [rowCrit, candidateType].sort() as [string, string];
-                        return IMPOSSIBLE_TYPE_PAIRS.some(p => p[0] === pair[0] && p[1] === pair[1]);
-                    });
-
-                    if (!isImpossible) {
-                        tempColAnswers.push(candidateType);
-                        availableTypes.splice(j, 1);
-                        foundType = true;
-                        break;
-                    }
-                }
-                if (!foundType) {
-                    tempColAnswers = []; 
-                    break;
-                }
-            }
-
-            if (tempColAnswers.length !== gridSize) continue;
-
-            if (Math.random() > 0.5) {
-                rowAnswers = tempRowAnswers;
-                colAnswers = tempColAnswers;
-            } else {
-                rowAnswers = tempColAnswers;
-                colAnswers = tempRowAnswers;
-            }
         } else {
             const shuffledCriteria = shuffle([...criteriaPool]);
             if (shuffledCriteria.length < gridSize * 2) return null;
@@ -633,7 +591,6 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         case 'blinded':
         case 'timer':
         case 'ditto':
-        case 'scarred':
              return createStandardPuzzle(mode);
         default:
             return createStandardPuzzle('normal');

@@ -5,6 +5,7 @@
 
 
 
+
 import Link from 'next/link';
 import { PuzzleLoader } from '@/components/puzzle-loader';
 import { generatePuzzle } from '@/lib/puzzle-generator';
@@ -280,9 +281,9 @@ export default function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className={cn(
       "flex min-h-screen flex-col items-center p-2 sm:p-4 md:p-6",
-      mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'timer' || mode === 'order' || mode === 'ditto' ? "justify-start" : "justify-center",
+      mode === 'blinded' || mode === 'odd-one-out' || mode === 'miss-matched' || mode === 'timer' || mode === 'order' || mode === 'ditto' ? "justify-start" : "justify-center",
     )}>
-      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'scarred' || mode === 'miss-matched' || mode === 'imposter' || mode === 'timer' || mode === 'order' || mode === 'ditto' ? 'max-w-none' : 'max-w-7xl')}>
+      <div className={cn("w-full", mode === 'blinded' || mode === 'odd-one-out' || mode === 'miss-matched' || mode === 'imposter' || mode === 'timer' || mode === 'order' || mode === 'ditto' ? 'max-w-none' : 'max-w-7xl')}>
         <header className="mb-6 flex items-center justify-between">
           <div className="text-left">
             <h1 className="text-5xl font-bold tracking-tighter text-primary sm:text-6xl font-headline">
