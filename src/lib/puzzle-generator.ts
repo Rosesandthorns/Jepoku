@@ -534,7 +534,7 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
         ...solvedPuzzle,
         mode: 'miss-matched',
         shuffledGrid,
-        solutionGrid,
+        solutionGrid: solvedPuzzle.grid,
         revealedCriterion: {
             axis: revealedAxis,
             index: revealedIndex,

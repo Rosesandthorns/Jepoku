@@ -61,7 +61,7 @@ function SubmitButton({ isCorrect }: { isCorrect: boolean }) {
 export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswersAction, mode }) => {
   const [state, formAction] = useActionState(checkAnswersAction, getInitialState(puzzle));
   
-  const [playerGrid, setPlayerGrid] = useState<(Pokemon | null)[][]>(puzzle.shuffledGrid!);
+  const [playerGrid, setPlayerGrid] = useState<(Pokemon | null)[][]>(() => puzzle.shuffledGrid || []);
   
   const findInitialEmptySlot = () => {
     if (!puzzle.shuffledGrid) return { row: -1, col: -1 };
@@ -86,6 +86,15 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
       setScore(parseInt(savedScore, 10));
     }
   }, []);
+  
+  useEffect(() => {
+    // When a new puzzle is passed in, reset the player grid state
+    if (puzzle.shuffledGrid) {
+      setPlayerGrid(puzzle.shuffledGrid);
+      setEmptySlot(findInitialEmptySlot());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [puzzle.shuffledGrid]);
 
   useEffect(() => {
     if (state.isCorrect) {
@@ -206,7 +215,7 @@ export const MissMatchedBoard: FC<MissMatchedBoardProps> = ({ puzzle, checkAnswe
               </div>
 
               <div className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}>
-                {playerGrid.flat().map((pokemon, i) => {
+                {(playerGrid && playerGrid.length > 0) && playerGrid.flat().map((pokemon, i) => {
                   const row = Math.floor(i / gridSize);
                   const col = i % gridSize;
                   
