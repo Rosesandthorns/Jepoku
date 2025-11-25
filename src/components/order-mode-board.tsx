@@ -134,7 +134,7 @@ export const OrderModeBoard: FC<OrderModeBoardProps> = ({ puzzle, checkAnswersAc
   const [score, setScore] = useState(0);
   const [playerOrder, setPlayerOrder] = useState<Pokemon[]>(puzzle.pokemonList!);
 
-  const puzzleId = useMemo(() => puzzle.pokemonList!.map(p => p.id).sort().join('-'), [puzzle]);
+  const puzzleId = useMemo(() => puzzle.pokemonList?.map(p => p.id).sort().join('-') ?? '', [puzzle]);
 
   useEffect(() => {
     const savedScore = localStorage.getItem('jepokuScore');
