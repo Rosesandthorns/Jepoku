@@ -1,5 +1,4 @@
 
-
 import 'server-only';
 import { getAllPokemonWithDetails } from './pokedex';
 import type { Puzzle, Pokemon, JepokuMode, OrderBy } from './definitions';
@@ -196,50 +195,68 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
         if (attempt > 0 && attempt % 5000 === 0) {
             console.log(`[${mode}] Generation attempt: ${attempt}...`);
         }
+        
         let rowAnswers: string[] = [];
         let colAnswers: string[] = [];
         let availableCriteria = shuffle([...criteriaPool]);
 
         if (isBlindedLike) {
-            // Smarter criteria selection for Blinded mode
-            let selectedCriteria: string[] = [];
-            while(selectedCriteria.length < gridSize * 2 && availableCriteria.length > 0) {
-                const nextCriterion = availableCriteria.pop()!;
+            // Aggressive iterative refinement for large grids
+            const selectedCriteria: string[] = [];
+            let hasRegionAxis: 'row' | 'col' | null = null;
+            const currentPool = shuffle([...criteriaPool]);
 
-                // Create a temporary list of what criteria would be if we added the new one
-                const tempSelected = [...selectedCriteria, nextCriterion];
-                const tempRows = tempSelected.slice(0, Math.ceil(tempSelected.length / 2));
-                const tempCols = tempSelected.slice(Math.ceil(tempSelected.length / 2));
+            while (selectedCriteria.length < gridSize * 2 && currentPool.length > 0) {
+                const isRow = selectedCriteria.length < gridSize;
+                const axisAnswers = isRow ? rowAnswers : colAnswers;
+                const otherAxisAnswers = isRow ? colAnswers : rowAnswers;
 
-                // Rule 1: Regions on one axis only
-                const hasRegionOnBothAxes = tempRows.some(r => REGIONS.includes(r)) && tempCols.some(c => REGIONS.includes(c));
-                if (hasRegionOnBothAxes) continue;
+                let foundCriterion = false;
+                for (let i = 0; i < currentPool.length; i++) {
+                    const nextCriterion = currentPool[i];
 
-                // Rule 2: No impossible type intersections
-                let hasImpossiblePair = false;
-                for (const r of tempRows) {
-                    for (const c of tempCols) {
+                    // Rule: Don't pick the same criterion twice
+                    if (selectedCriteria.includes(nextCriterion)) continue;
+
+                    // Rule: Regions on one axis only
+                    if (REGIONS.includes(nextCriterion)) {
+                        if (hasRegionAxis && (isRow ? hasRegionAxis === 'col' : hasRegionAxis === 'row')) {
+                            continue; // This axis can't have a region
+                        }
+                    }
+
+                    // Rule: No impossible type intersections
+                    let hasImpossiblePair = false;
+                    for (const otherCrit of otherAxisAnswers) {
                         const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair =>
-                            (pair[0] === r && pair[1] === c) || (pair[1] === r && pair[0] === c)
+                            (pair[0] === nextCriterion && pair[1] === otherCrit) || (pair[1] === nextCriterion && pair[0] === otherCrit)
                         );
                         if (isImpossible) {
                             hasImpossiblePair = true;
                             break;
                         }
                     }
-                    if (hasImpossiblePair) break;
-                }
-                if (hasImpossiblePair) continue;
+                    if (hasImpossiblePair) continue;
 
-                // If all checks pass, add the criterion
-                selectedCriteria.push(nextCriterion);
+                    // If all checks pass, select this criterion
+                    axisAnswers.push(nextCriterion);
+                    selectedCriteria.push(nextCriterion);
+                    currentPool.splice(i, 1); // Remove from pool for this attempt
+                    if (REGIONS.includes(nextCriterion) && !hasRegionAxis) {
+                        hasRegionAxis = isRow ? 'row' : 'col';
+                    }
+                    foundCriterion = true;
+                    break; // Exit the inner for-loop to find a criterion for the next slot
+                }
+                
+                if (!foundCriterion) {
+                    break; // Could not find a valid criterion for this slot, must restart entire attempt
+                }
             }
 
-            if (selectedCriteria.length < gridSize * 2) continue; // Failed to find a valid set
-            
-            rowAnswers = selectedCriteria.slice(0, gridSize);
-            colAnswers = selectedCriteria.slice(gridSize);
-
+            if (selectedCriteria.length < gridSize * 2) {
+                continue; // Restart outer for-loop if we failed to fill all slots
+            }
         } else if (isHardLike) {
             const allSelected: string[] = [];
             for(let i = 0; i < gridSize * 2; i++) {
@@ -300,9 +317,9 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
                 mode
             };
 
-            // if (isBlindedLike) {
-            //     puzzle.visibleMask = generateVisibilityMask(gridSize);
-            // }
+            if (isBlindedLike) {
+                 puzzle.visibleMask = generateVisibilityMask(gridSize);
+            }
 
             return puzzle;
         }
@@ -321,11 +338,9 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
     }
     
     const gridSize = 5;
-    const criteriaPool = NORMAL_CRITERIA;
-    const criteriaMap = buildCriteriaMap(allPokemon, criteriaPool);
 
     for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS; attempt++) {
-         if (attempt > 0 && attempt % 5000 === 0) {
+        if (attempt > 0 && attempt % 5000 === 0) {
             console.log(`[odd-one-out] Generation attempt: ${attempt}...`);
         }
         
@@ -491,7 +506,7 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
         ...solvedPuzzle,
         grid: shuffledGrid, // The main grid is the shuffled one
         mode: 'miss-matched',
-        shuffledGrid,
+        shuffledGrid: shuffledGrid,
         solutionGrid: solvedPuzzle.grid,
         revealedCriterion: {
             axis: revealedAxis,
