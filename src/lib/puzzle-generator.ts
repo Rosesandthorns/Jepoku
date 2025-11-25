@@ -14,7 +14,7 @@ const IMPOSSIBLE_TYPE_PAIRS: [string, string][] = [
     ['Fire', 'Fairy'],
     ['Ice', 'Poison'],
     ['Ground', 'Fairy'],
-    ['Bug', 'Dragon'], ['Bug', 'Ghost'],
+    ['Bug', 'Dragon'],
     ['Rock', 'Ghost']
 ];
 
@@ -120,53 +120,28 @@ function generateVisibilityMask(gridSize: number): boolean[][] {
     const indices = Array.from({ length: gridSize }, (_, i) => i);
     const visibleCount = 3;
 
-    // Initial random population
     for (let r = 0; r < gridSize; r++) {
         const visibleCols = shuffle([...indices]).slice(0, visibleCount);
         for (const c of visibleCols) {
             mask[r][c] = true;
         }
     }
-
-    // Iteratively balance the grid
-    for (let i = 0; i < 50; i++) { // Safety break after 50 iterations
-        let changesMade = false;
-
-        // Check and fix columns
-        for (let c = 0; c < gridSize; c++) {
-            const col = mask.map(row => row[c]);
-            const count = col.filter(v => v).length;
-            if (count > visibleCount) {
-                const visibleRows = indices.filter(r => mask[r][c]);
-                const toHide = shuffle(visibleRows)[0];
-                mask[toHide][c] = false;
-                changesMade = true;
-            } else if (count < visibleCount) {
-                const hiddenRows = indices.filter(r => !mask[r][c]);
-                const toShow = shuffle(hiddenRows)[0];
-                mask[toShow][c] = true;
-                changesMade = true;
+    
+    for (let c = 0; c < gridSize; c++) {
+        const colCount = mask.reduce((acc, row) => acc + (row[c] ? 1 : 0), 0);
+        if (colCount < visibleCount) {
+            const hiddenRows = indices.filter(r => !mask[r][c]);
+            const toShow = shuffle(hiddenRows).slice(0, visibleCount - colCount);
+            for(const r of toShow) {
+                mask[r][c] = true;
+            }
+        } else if (colCount > visibleCount) {
+            const visibleRows = indices.filter(r => mask[r][c]);
+            const toHide = shuffle(visibleRows).slice(0, colCount - visibleCount);
+             for(const r of toHide) {
+                mask[r][c] = false;
             }
         }
-        
-        // Check and fix rows
-        for (let r = 0; r < gridSize; r++) {
-            const row = mask[r];
-            const count = row.filter(v => v).length;
-             if (count > visibleCount) {
-                const visibleCols = indices.filter(c => mask[r][c]);
-                const toHide = shuffle(visibleCols)[0];
-                mask[r][toHide] = false;
-                changesMade = true;
-            } else if (count < visibleCount) {
-                const hiddenCols = indices.filter(c => !mask[r][c]);
-                const toShow = shuffle(hiddenCols)[0];
-                mask[r][toShow] = true;
-                changesMade = true;
-            }
-        }
-
-        if (!changesMade) break; // If a full pass makes no changes, we're stable.
     }
 
     return mask;
@@ -236,18 +211,18 @@ async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
 
             let primaryPool = regionsAreRows ? regionCriteria : otherCriteria;
             let secondaryPool = regionsAreRows ? otherCriteria : regionCriteria;
-
+            
             if (primaryPool.length < gridSize || secondaryPool.length < gridSize) continue;
 
             rowAnswers = shuffle(primaryPool).slice(0, gridSize);
             colAnswers = shuffle(secondaryPool).slice(0, gridSize);
             
-            // Check for impossible type pairs
             let hasImpossiblePair = false;
             for (const r of rowAnswers) {
                 for (const c of colAnswers) {
                     const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
-                        (pair[0] === r && pair[1] === c) || (pair[0] === c && pair[1] === r)
+                        (pair[0].toLowerCase() === r.toLowerCase() && pair[1].toLowerCase() === c.toLowerCase()) || 
+                        (pair[0].toLowerCase() === c.toLowerCase() && pair[1].toLowerCase() === r.toLowerCase())
                     );
                     if (isImpossible) {
                         hasImpossiblePair = true;
@@ -370,7 +345,8 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         for (const r of rowAnswers) {
             for (const c of colAnswers) {
                 const isImpossible = IMPOSSIBLE_TYPE_PAIRS.some(pair => 
-                    (pair[0] === r && pair[1] === c) || (pair[0] === c && pair[1] === r)
+                    (pair[0].toLowerCase() === r.toLowerCase() && pair[1].toLowerCase() === c.toLowerCase()) || 
+                    (pair[0].toLowerCase() === c.toLowerCase() && pair[1].toLowerCase() === r.toLowerCase())
                 );
                 if (isImpossible) {
                     hasImpossiblePair = true;
@@ -457,6 +433,7 @@ async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
 }
 
 async function createImposterPuzzle(): Promise<Puzzle | null> {
+    console.log(`--- Generating new puzzle for mode: imposter ---`);
     const allPokemon = await getAllPokemonWithDetails();
     if (!allPokemon.length) {
         console.error("No Pokemon data available.");
@@ -465,62 +442,53 @@ async function createImposterPuzzle(): Promise<Puzzle | null> {
     
     const gridSize = 3;
 
-    // 1. Generate a valid 3x3 hard mode puzzle
-    let basePuzzle: Puzzle | null = null;
-    for (let i = 0; i < 50; i++) { // Try a few times to get a base puzzle
-        const puzzle = await createStandardPuzzle('imposter'); // Uses hard criteria
-        if (puzzle && puzzle.grid.length === gridSize) {
-            basePuzzle = puzzle;
-            break;
+    for (let attempt = 0; attempt < MAX_PUZZLE_ATTEMPTS / 10; attempt++) {
+        // 1. Generate a valid 3x3 hard mode puzzle
+        const basePuzzle = await createStandardPuzzle('imposter');
+        if (!basePuzzle) continue;
+    
+        const { grid, rowAnswers, colAnswers } = basePuzzle;
+        const usedPokemonIds = new Set(grid.flat().map(p => p.id));
+        
+        // 2. Select one random Pokémon to replace
+        const imposterRow = Math.floor(Math.random() * gridSize);
+        const imposterCol = Math.floor(Math.random() * gridSize);
+        const imposterCoord = { row: imposterRow, col: imposterCol };
+        
+        const originalPokemon = grid[imposterRow][imposterCol];
+        usedPokemonIds.delete(originalPokemon.id);
+    
+        const rowCriterion = rowAnswers[imposterRow];
+        const colCriterion = colAnswers[imposterCol];
+    
+        // 3. Find an imposter Pokémon
+        const imposterCandidate = shuffle(allPokemon).find(p => {
+            if (usedPokemonIds.has(p.id)) return false;
+            const pCriteria = getPokemonCriteria(p);
+            // Must not fit EITHER criterion
+            return !pCriteria.has(rowCriterion) && !pCriteria.has(colCriterion);
+        });
+    
+        if (imposterCandidate) {
+            grid[imposterRow][imposterCol] = imposterCandidate;
+            console.log(`[imposter] Successfully generated puzzle after ${attempt + 1} attempts.`);
+            return {
+                grid,
+                rowAnswers,
+                colAnswers,
+                mode: 'imposter',
+                oddOneOutCoords: [imposterCoord], // Store the single imposter
+            };
         }
     }
-    if (!basePuzzle) {
-        console.error("Failed to create base puzzle for Imposter mode.");
-        return null;
-    }
-
-    const { grid, rowAnswers, colAnswers } = basePuzzle;
-    const usedPokemonIds = new Set(grid.flat().map(p => p.id));
     
-    // 2. Select one random Pokémon to replace
-    const imposterRow = Math.floor(Math.random() * gridSize);
-    const imposterCol = Math.floor(Math.random() * gridSize);
-    const imposterCoord = { row: imposterRow, col: imposterCol };
-    
-    const originalPokemon = grid[imposterRow][imposterCol];
-    usedPokemonIds.delete(originalPokemon.id);
-
-    const rowCriterion = rowAnswers[imposterRow];
-    const colCriterion = colAnswers[imposterCol];
-
-    // 3. Find an imposter Pokémon
-    const imposterCandidate = shuffle(allPokemon).find(p => {
-        if (usedPokemonIds.has(p.id)) return false;
-        const pCriteria = getPokemonCriteria(p);
-        // Must not fit EITHER criterion
-        return !pCriteria.has(rowCriterion) && !pCriteria.has(colCriterion);
-    });
-
-    if (imposterCandidate) {
-        grid[imposterRow][imposterCol] = imposterCandidate;
-        return {
-            grid,
-            rowAnswers,
-            colAnswers,
-            mode: 'imposter',
-            oddOneOutCoords: [imposterCoord], // Store the single imposter
-        };
-    } else {
-         // This is unlikely but possible. We'll just return the solvable hard puzzle
-         // instead of failing outright. The user won't know the difference.
-         // Or we could retry. For now, let's retry.
-         return createImposterPuzzle();
-    }
+    console.error(`[imposter] Failed to generate a puzzle after multiple attempts.`);
+    return null;
 }
 
 
 async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
-    const allPokemon = await getAllPokemonWithDetails();
+    console.log(`--- Generating new puzzle for mode: miss-matched ---`);
     const gridSize = 3;
 
     // 1. Generate a valid, solvable 3x3 puzzle
@@ -546,21 +514,21 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
 
     // 3. Create the shuffled grid
     const pokemonToShuffle = solutionGrid.flat();
-    const emptyIndex = Math.floor(Math.random() * (gridSize * gridSize));
+    const emptySlotIndex = Math.floor(Math.random() * (gridSize * gridSize));
     
-    // Remove one Pokémon to create an empty slot
-    const pokemonForGrid = pokemonToShuffle.filter((_, i) => i !== emptyIndex);
-    const shuffledPokemon = shuffle(pokemonForGrid);
+    const shuffledPokemon = shuffle(pokemonToShuffle);
     
     const shuffledGrid: (Pokemon | null)[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
     let currentPokeIndex = 0;
     for (let r = 0; r < gridSize; r++) {
         for (let c = 0; c < gridSize; c++) {
-            if (r * gridSize + c !== emptyIndex) {
+            if (r * gridSize + c !== emptySlotIndex) {
                 shuffledGrid[r][c] = shuffledPokemon[currentPokeIndex++];
             }
         }
     }
+    // One pokemon will be left out. The empty slot replaces it.
+    console.log("[miss-matched] Successfully generated puzzle.");
 
     return {
         grid: solvedPuzzle.grid,
@@ -578,6 +546,7 @@ async function createMissMatchedPuzzle(): Promise<Puzzle | null> {
 }
 
 async function createOrderPuzzle(): Promise<Puzzle | null> {
+    console.log(`--- Generating new puzzle for mode: order ---`);
     const allPokemon = await getAllPokemonWithDetails();
     const pokemonCount = 16;
     const shuffledPokemon = shuffle([...allPokemon]);
@@ -616,6 +585,7 @@ async function createOrderPuzzle(): Promise<Puzzle | null> {
     });
 
     const correctOrderIds = sortedPokemon.map(p => p.id);
+    console.log("[order] Successfully generated puzzle.");
 
     return {
         grid: [],
