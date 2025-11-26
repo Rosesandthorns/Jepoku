@@ -4,8 +4,9 @@ import 'server-only';
 import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
 
-const POKEAPI_URL = 'https://pokeapi.co/api/v2';
-const POKEMON_COUNT = 1025; // Up to Gen 9
+export const POKEAPI_URL = 'https://pokeapi.co/api/v2';
+export const POKEMON_COUNT = 1025; // Up to Gen 9
+export const POKEMON_CACHE_TAG = 'all-pokemon';
 
 const PARTNER_POKEMON = [
     'bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee',
@@ -247,8 +248,9 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen9-hard-mode-v4-cache-bust'],
-  { revalidate: 3600 } // Revalidate once an hour
+  [POKEMON_CACHE_TAG],
+  { 
+    revalidate: 3600,
+    tags: [POKEMON_CACHE_TAG]
+  }
 );
-
-    

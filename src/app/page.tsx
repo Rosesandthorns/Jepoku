@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Menu } from 'lucide-react';
+import { RefreshButton } from '@/components/refresh-button';
 
 export default function HomePage() {
   return (
@@ -74,6 +75,8 @@ export default function HomePage() {
                 <DropdownMenuItem disabled>
                     Scarred Mode
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <RefreshButton />
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

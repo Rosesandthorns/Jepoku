@@ -5,11 +5,20 @@ import type { Puzzle, ValidationResult, JepokuMode, Pokemon } from '@/lib/defini
 import { generatePuzzle } from '@/lib/puzzle-generator';
 import { lcs } from '@/lib/lcs';
 import { getPokemonCriteria } from '@/lib/criteria';
+import { revalidateTag } from 'next/cache';
+import { POKEMON_CACHE_TAG } from './pokedex';
 
 export async function getNewPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
   const effectiveMode = mode === 'timer' ? 'easy' : mode;
   return generatePuzzle(effectiveMode);
 }
+
+export async function forceRefreshData() {
+  console.log('Forcing cache revalidation for all Pokemon data...');
+  revalidateTag(POKEMON_CACHE_TAG);
+  console.log('Cache revalidation triggered.');
+}
+
 
 export async function checkAnswers(
   prevState: ValidationResult,
