@@ -106,6 +106,20 @@ const generationToRegion: { [key: string]: string } = {
     'generation-ix': 'Paldea',
 }
 
+function toSentenceCase(str: string): string {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function cleanFlavorText(text: string): string {
+    return text
+        .replace(/[\n\f\r]/g, ' ')
+        .replace(/POKéMON/g, 'Pokémon')
+        .split('. ')
+        .map(sentence => toSentenceCase(sentence))
+        .join('. ');
+}
+
 export const getPokemonTypes = unstable_cache(
   async (): Promise<string[]> => {
     try {
@@ -196,7 +210,7 @@ export const getAllPokemonWithDetails = unstable_cache(
           const isParadox = abilities.includes('protosynthesis') || abilities.includes('quark-drive');
 
           const englishFlavorText = speciesData.flavor_text_entries.find(entry => entry.language.name === 'en');
-          const pokedexEntry = englishFlavorText ? englishFlavorText.flavor_text.replace(/[\n\f\r]/g, ' ') : 'No Pokédex entry found.';
+          const pokedexEntry = englishFlavorText ? cleanFlavorText(englishFlavorText.flavor_text) : 'No Pokédex entry found.';
 
 
           return {
@@ -236,3 +250,5 @@ export const getAllPokemonWithDetails = unstable_cache(
   ['all-pokemon-with-details-gen9-hard-mode-v3'],
   { revalidate: 3600 } // Revalidate once an hour
 );
+
+    

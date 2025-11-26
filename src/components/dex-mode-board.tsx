@@ -4,7 +4,7 @@
 import type { FC } from 'react';
 import React, { useState, useEffect, useMemo, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Check, Send, Trophy, X, HelpCircle, BookText, Hash } from 'lucide-react';
+import { Check, Send, Trophy, X, HelpCircle, BookOpen, Hash } from 'lucide-react';
 
 import type { Puzzle, ValidationResult, JepokuMode, Pokemon } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
@@ -174,8 +174,8 @@ export const DexModeBoard: FC<DexModeBoardProps> = ({ puzzle, checkAnswersAction
                                 </>
                               ) : (
                                 <>
-                                  <BookText className="h-8 w-8 text-gray-400 mb-2 flex-shrink-0" />
-                                  <p className="text-xs text-gray-300 overflow-y-auto">{pokemon.pokedexEntry}</p>
+                                  <BookOpen className="h-8 w-8 text-gray-400 mb-2 flex-shrink-0" />
+                                  <p className="text-sm text-gray-300 overflow-y-auto">{pokemon.pokedexEntry}</p>
                                 </>
                               )}
                             </div>
@@ -211,3 +211,5 @@ export const DexModeBoard: FC<DexModeBoardProps> = ({ puzzle, checkAnswersAction
     </TooltipProvider>
   );
 };
+
+    
