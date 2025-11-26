@@ -247,7 +247,7 @@ export const getAllPokemonWithDetails = unstable_cache(
       return [];
     }
   },
-  ['all-pokemon-with-details-gen9-hard-mode-v3'],
+  ['all-pokemon-with-details-gen9-hard-mode-v4-cache-bust'],
   { revalidate: 3600 } // Revalidate once an hour
 );
 
