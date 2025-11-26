@@ -3,10 +3,7 @@
 import 'server-only';
 import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
-
-export const POKEAPI_URL = 'https://pokeapi.co/api/v2';
-export const POKEMON_COUNT = 1025; // Up to Gen 9
-export const POKEMON_CACHE_TAG = 'all-pokemon-data-v2';
+import { POKEAPI_URL, POKEMON_COUNT, POKEMON_CACHE_TAG } from './constants';
 
 const PARTNER_POKEMON = [
     'bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee',
@@ -280,3 +277,5 @@ export const getAllPokemonWithDetails = unstable_cache(
     tags: [POKEMON_CACHE_TAG]
   }
 );
+
+    

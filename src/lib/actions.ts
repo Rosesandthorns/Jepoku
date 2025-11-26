@@ -6,7 +6,8 @@ import { generatePuzzle } from '@/lib/puzzle-generator';
 import { lcs } from '@/lib/lcs';
 import { getPokemonCriteria } from '@/lib/criteria';
 import { revalidateTag } from 'next/cache';
-import { POKEMON_CACHE_TAG, getPokemonTypes as getTypesFromPokedex, getAllPokemonWithDetails } from './pokedex';
+import { getPokemonTypes as getTypesFromPokedex, getAllPokemonWithDetails } from './pokedex';
+import { POKEMON_CACHE_TAG } from './constants';
 
 export async function getNewPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
   const effectiveMode = mode === 'timer' ? 'easy' : mode;
@@ -200,3 +201,5 @@ export async function checkAnswers(
     };
   }
 }
+
+    
