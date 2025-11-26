@@ -1,5 +1,4 @@
 
-'use server';
 import 'server-only';
 import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';

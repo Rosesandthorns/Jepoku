@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getPokemonTypes } from '@/lib/pokedex';
+import { getTypes } from '@/lib/actions';
 
 function getInitialState(puzzle: Puzzle): ValidationResult {
   const size = puzzle.grid.length;
@@ -69,7 +69,7 @@ export const DexModeBoard: FC<DexModeBoardProps> = ({ puzzle, checkAnswersAction
       setScore(parseInt(savedScore, 10));
     }
     async function fetchTypes() {
-        const types = await getPokemonTypes();
+        const types = await getTypes();
         setTypeCriteria(types.map(t => t.charAt(0).toUpperCase() + t.slice(1)));
     }
     fetchTypes();
