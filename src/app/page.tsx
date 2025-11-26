@@ -70,6 +70,9 @@ export default function HomePage() {
                  <DropdownMenuItem asChild>
                     <Link href="/?mode=ditto" >Ditto Mode</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/?mode=criteria" >Criteria Mode</Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
                 <DropdownMenuItem disabled>

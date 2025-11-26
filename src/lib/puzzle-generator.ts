@@ -9,6 +9,7 @@ import { createMissMatchedPuzzle } from './puzzle-generators/miss-matched-puzzle
 import { createOrderPuzzle } from './puzzle-generators/order-puzzle';
 import { createDualPuzzle } from './puzzle-generators/dual-puzzle';
 import { createDexPuzzle } from './puzzle-generators/dex-puzzle';
+import { createCriteriaPuzzle } from './puzzle-generators/criteria-puzzle';
 
 
 export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
@@ -25,6 +26,8 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             return createDualPuzzle();
         case 'dex':
             return createDexPuzzle();
+        case 'criteria':
+            return createCriteriaPuzzle();
         case 'easy':
         case 'normal':
         case 'hard':

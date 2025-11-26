@@ -6,7 +6,7 @@ import { generatePuzzle } from '@/lib/puzzle-generator';
 import { lcs } from '@/lib/lcs';
 import { getPokemonCriteria } from '@/lib/criteria';
 import { revalidateTag } from 'next/cache';
-import { POKEMON_CACHE_TAG, getPokemonTypes as getTypesFromPokedex } from './pokedex';
+import { POKEMON_CACHE_TAG, getPokemonTypes as getTypesFromPokedex, getAllPokemonWithDetails } from './pokedex';
 
 export async function getNewPuzzle(mode: JepokuMode): Promise<Puzzle | null> {
   const effectiveMode = mode === 'timer' ? 'easy' : mode;
@@ -21,6 +21,14 @@ export async function forceRefreshData() {
 
 export async function getTypes(): Promise<string[]> {
     return getTypesFromPokedex();
+}
+
+export async function getPokemonNames(): Promise<{value: string, label: string}[]> {
+    const allPokemon = await getAllPokemonWithDetails();
+    return allPokemon.map(p => ({
+        value: p.name,
+        label: p.name.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+    }));
 }
 
 

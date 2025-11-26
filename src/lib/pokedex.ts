@@ -1,11 +1,12 @@
 
+'use server';
 import 'server-only';
 import type { Pokemon } from './definitions';
 import { unstable_cache } from 'next/cache';
 
 export const POKEAPI_URL = 'https://pokeapi.co/api/v2';
 export const POKEMON_COUNT = 1025; // Up to Gen 9
-export const POKEMON_CACHE_TAG = 'all-pokemon';
+export const POKEMON_CACHE_TAG = 'all-pokemon-data-v2';
 
 const PARTNER_POKEMON = [
     'bulbasaur', 'charmander', 'squirtle', 'pikachu', 'eevee',
@@ -70,20 +71,17 @@ interface PokeApiSpecies {
     is_legendary: boolean;
     is_mythical: boolean;
     flavor_text_entries: PokeApiFlavorTextEntry[];
+    egg_groups: PokeApiResource[];
+}
+
+interface EvolutionNode {
+    species: PokeApiResource;
+    evolves_to: EvolutionNode[];
 }
 
 interface PokeApiEvolutionChain {
     id: number;
-    chain: {
-        species: PokeApiResource;
-        evolves_to: {
-            species: PokeApiResource;
-            evolves_to: {
-                species: PokeApiResource;
-                evolves_to: any[];
-            }[];
-        }[];
-    };
+    chain: EvolutionNode;
 }
 
 interface PokeApiVariety {
@@ -94,7 +92,7 @@ interface PokeApiPokemonSpecies {
     varieties: PokeApiVariety[];
 }
 
-const generationToRegion: { [key: string]: string } = {
+const generationToRegionMap: { [key: string]: string } = {
     'generation-i': 'Kanto',
     'generation-ii': 'Johto',
     'generation-iii': 'Hoenn',
@@ -104,6 +102,18 @@ const generationToRegion: { [key: string]: string } = {
     'generation-vii': 'Alola',
     'generation-viii': 'Galar',
     'generation-ix': 'Paldea',
+}
+
+const generationToIdMap: { [key: string]: number } = {
+    'generation-i': 1,
+    'generation-ii': 2,
+    'generation-iii': 3,
+    'generation-iv': 4,
+    'generation-v': 5,
+    'generation-vi': 6,
+    'generation-vii': 7,
+    'generation-viii': 8,
+    'generation-ix': 9,
 }
 
 function toSentenceCase(str: string): string {
@@ -150,6 +160,19 @@ async function hasMegaEvolution(pokemonName: string): Promise<boolean> {
     }
 }
 
+function getEvolutionLineSize(chain: EvolutionNode): number {
+    let size = 0;
+    const queue = [chain];
+    while (queue.length > 0) {
+        const node = queue.shift();
+        if (node) {
+            size++;
+            node.evolves_to.forEach(evo => queue.push(evo));
+        }
+    }
+    return size;
+}
+
 export const getAllPokemonWithDetails = unstable_cache(
   async (): Promise<Pokemon[]> => {
     try {
@@ -170,6 +193,8 @@ export const getAllPokemonWithDetails = unstable_cache(
           const evolutionChainRes = await fetch(speciesData.evolution_chain.url);
           if (!evolutionChainRes.ok) return null;
           const evolutionChainData: PokeApiEvolutionChain = await evolutionChainRes.json();
+          
+          const evolutionLineSize = getEvolutionLineSize(evolutionChainData.chain);
 
           let canEvolve = false;
           let isFinalEvolution = false;
@@ -191,7 +216,7 @@ export const getAllPokemonWithDetails = unstable_cache(
           }
 
           const isMega = await hasMegaEvolution(pokemonData.name);
-          const region = generationToRegion[speciesData.generation.name] || 'Unknown';
+          const region = generationToRegionMap[speciesData.generation.name] || 'Unknown';
 
           const stats = { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 };
           pokemonData.stats.forEach(s => {
@@ -211,7 +236,7 @@ export const getAllPokemonWithDetails = unstable_cache(
 
           const englishFlavorText = speciesData.flavor_text_entries.find(entry => entry.language.name === 'en');
           const pokedexEntry = englishFlavorText ? cleanFlavorText(englishFlavorText.flavor_text) : 'No Pokédex entry found.';
-
+          const eggGroups = speciesData.egg_groups.map(eg => eg.name);
 
           return {
             id: pokemonData.id,
@@ -233,6 +258,8 @@ export const getAllPokemonWithDetails = unstable_cache(
             weight: pokemonData.weight,
             pokedexEntry,
             stats,
+            eggGroups,
+            evolutionLineSize,
           };
         } catch (e) {
           console.error(`Failed to process ${p.name}`, e)

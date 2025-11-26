@@ -79,6 +79,12 @@ This document provides a brief overview of each game mode available in Jepoku.
 - **Mechanic**: A high-stakes survival mode. Solve a puzzle correctly, and the board transforms into a new puzzle. If you make a single incorrect guess, the game ends.
 - **Goal**: Achieve the longest streak of correctly solved puzzles. Score is not added to the main leaderboard.
 
+### Criteria Mode
+- **Grid Size**: 1 Pokémon to guess
+- **Criteria**: A series of clues are revealed every 15 seconds.
+- **Mechanic**: A 2-minute timer starts. The player must guess the Pokémon's name based on an expanding list of clues like its type, generation, abilities, and more.
+- **Goal**: Guess the Pokémon before time runs out.
+
 ## Coming Soon
 
 ### Scarred Mode

@@ -11,6 +11,7 @@ import { OrderModeBoard } from '@/components/order-mode-board';
 import { DittoModeBoard } from '@/components/ditto-mode-board';
 import { DualModeBoard } from '@/components/dual-mode-board';
 import { DexModeBoard } from '@/components/dex-mode-board';
+import { CriteriaModeBoard } from '@/components/criteria-mode-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/card';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { getNewPuzzle, checkAnswers } from '@/lib/actions';
+import { getNewPuzzle, checkAnswers, getPokemonNames } from '@/lib/actions';
 
 
 function PuzzleLoaderInternal() {
@@ -40,13 +41,14 @@ function PuzzleLoaderInternal() {
     (modeParam === 'ditto' ? 'ditto' : 
     (modeParam === 'sprite' ? 'sprite' : 
     (modeParam === 'dex' ? 'dex' : 
-    (modeParam === 'dual' ? 'dual' : 'normal'))))))))))));
+    (modeParam === 'dual' ? 'dual' : 
+    (modeParam === 'criteria' ? 'criteria' : 'normal')))))))))))));
   
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (['timer', 'ditto'].includes(mode)) {
+    if (['timer', 'ditto', 'criteria'].includes(mode)) {
       setPuzzle(null); // These modes manage their own puzzle loading
       return;
     }
@@ -66,6 +68,10 @@ function PuzzleLoaderInternal() {
   
   if (mode === 'ditto') {
     return <DittoModeBoard getPuzzleAction={getNewPuzzle} checkAnswersAction={checkAnswers} />;
+  }
+  
+  if (mode === 'criteria') {
+    return <CriteriaModeBoard getPuzzleAction={getNewPuzzle} getPokemonNamesAction={getPokemonNames} />;
   }
 
 

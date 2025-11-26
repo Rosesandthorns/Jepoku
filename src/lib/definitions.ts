@@ -19,6 +19,8 @@ export interface Pokemon {
   height: number;
   weight: number;
   pokedexEntry: string;
+  eggGroups: string[];
+  evolutionLineSize: number;
   stats: {
     hp: number;
     attack: number;
@@ -29,7 +31,7 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite' | 'dual' | 'dex';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite' | 'dual' | 'dex' | 'criteria';
 
 export type OrderBy = 'pokedex' | 'height' | 'weight' | 'bst' | 'hp' | 'attack' | 'defense' | 'special-attack' | 'special-defense' | 'speed';
 
@@ -62,6 +64,10 @@ export interface Puzzle {
 
   // For Dex mode
   dexDisplay?: ('number' | 'entry')[][];
+  
+  // For Criteria mode
+  targetPokemon?: Pokemon;
+  clues?: { label: string; value: string }[];
 }
 
 export interface ValidationResult {
