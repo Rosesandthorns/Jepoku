@@ -25,13 +25,6 @@ export async function createEasyCriteriaPuzzle(): Promise<Puzzle | null> {
     clues.push({ label: 'Type 1', value: formatString(targetPokemon.types[0]) });
     clues.push({ label: 'Type 2', value: targetPokemon.types[1] ? formatString(targetPokemon.types[1]) : 'None' });
     
-    let status = 'Regular';
-    if (targetPokemon.isLegendary) status = 'Legendary';
-    if (targetPokemon.isMythical) status = 'Mythical';
-    if (targetPokemon.isUltraBeast) status = 'Ultra Beast';
-    if (targetPokemon.isParadox) status = 'Paradox';
-    clues.push({ label: 'Status', value: status });
-    
     clues.push({ label: 'Region', value: targetPokemon.region });
 
     let evoStatus = 'Does Not Evolve';

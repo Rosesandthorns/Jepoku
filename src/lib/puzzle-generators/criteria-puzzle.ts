@@ -39,13 +39,6 @@ export async function createCriteriaPuzzle(): Promise<Puzzle | null> {
     independentClues.push({ label: 'Possible Ability', value: formatString(shuffle(targetPokemon.abilities)[0]) });
     independentClues.push({ label: 'Evolution Line Size', value: `${targetPokemon.evolutionLineSize}` });
 
-    let status = 'Regular';
-    if (targetPokemon.isLegendary) status = 'Legendary';
-    if (targetPokemon.isMythical) status = 'Mythical';
-    if (targetPokemon.isUltraBeast) status = 'Ultra Beast';
-    if (targetPokemon.isParadox) status = 'Paradox';
-    independentClues.push({ label: 'Status', value: status });
-
     const randomMoves = shuffle(targetPokemon.moves).slice(0, 2);
     if(randomMoves[0]) independentClues.push({ label: 'Learns', value: formatString(randomMoves[0]) });
     if(randomMoves[1]) independentClues.push({ label: 'Also Learns', value: formatString(randomMoves[1]) });
