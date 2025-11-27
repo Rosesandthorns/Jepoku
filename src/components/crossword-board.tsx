@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useActionState } from 'react';
+import { useState, useRef, useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Puzzle, JepokuMode, CrosswordValidationResult } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
@@ -39,13 +39,13 @@ export function CrosswordBoard({ getPuzzleAction, checkAnswersAction, mode }: Cr
     const [playerAnswers, setPlayerAnswers] = useState<Record<string, string>>({});
     const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-    useState(() => {
+    useEffect(() => {
         startTransition(true);
         getPuzzleAction(mode).then(newPuzzle => {
             setPuzzle(newPuzzle);
             startTransition(false);
         });
-    });
+    }, [getPuzzleAction, mode]);
 
     if (isPending || !puzzle || !puzzle.crosswordGrid || !puzzle.crosswordClues) {
         return (
