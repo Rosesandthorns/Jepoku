@@ -12,6 +12,7 @@ import { DittoModeBoard } from '@/components/ditto-mode-board';
 import { DualModeBoard } from '@/components/dual-mode-board';
 import { DexModeBoard } from '@/components/dex-mode-board';
 import { CriteriaModeBoard } from '@/components/criteria-mode-board';
+import { CrosswordBoard } from '@/components/crossword-board';
 import { Loader2 } from 'lucide-react';
 import {
   Card,
@@ -22,7 +23,7 @@ import {
 } from '@/components/ui/card';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { getNewPuzzle, checkAnswers, getPokemonNames } from '@/lib/actions';
+import { getNewPuzzle, checkAnswers, getPokemonNames, checkCrossword } from '@/lib/actions';
 
 
 function PuzzleLoaderInternal() {
@@ -43,7 +44,8 @@ function PuzzleLoaderInternal() {
     (modeParam === 'dex' ? 'dex' : 
     (modeParam === 'dual' ? 'dual' : 
     (modeParam === 'criteria' ? 'criteria' : 
-    (modeParam === 'easy-criteria' ? 'easy-criteria' : 'normal'))))))))))))));
+    (modeParam === 'easy-criteria' ? 'easy-criteria' :
+    (modeParam === 'crossword' ? 'crossword' : 'normal')))))))))))))));
   
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -73,6 +75,10 @@ function PuzzleLoaderInternal() {
   
   if (mode === 'criteria' || mode === 'easy-criteria') {
     return <CriteriaModeBoard getPuzzleAction={getNewPuzzle} getPokemonNamesAction={getPokemonNames} mode={mode} />;
+  }
+  
+  if (mode === 'crossword') {
+    return <CrosswordBoard getPuzzleAction={getNewPuzzle} checkAnswersAction={checkCrossword} mode={mode} />;
   }
 
 

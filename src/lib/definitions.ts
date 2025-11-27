@@ -31,9 +31,19 @@ export interface Pokemon {
   };
 }
 
-export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite' | 'dual' | 'dex' | 'criteria' | 'easy-criteria';
+export type JepokuMode = 'normal' | 'hard' | 'blinded' | 'easy' | 'odd-one-out' | 'imposter' | 'miss-matched' | 'timer' | 'order' | 'ditto' | 'sprite' | 'dual' | 'dex' | 'criteria' | 'easy-criteria' | 'crossword';
 
 export type OrderBy = 'pokedex' | 'height' | 'weight' | 'bst' | 'hp' | 'attack' | 'defense' | 'special-attack' | 'special-defense' | 'speed';
+
+interface CrosswordClue {
+    number: number;
+    direction: 'across' | 'down';
+    row: number;
+    col: number;
+    length: number;
+    clue: string; // The types, e.g. "Fire / Flying"
+    answer: string; // The pokemon name
+}
 
 export interface Puzzle {
   grid: (Pokemon | null)[][];
@@ -68,6 +78,13 @@ export interface Puzzle {
   // For Criteria mode
   targetPokemon?: Pokemon;
   clues?: { label: string; value: string }[];
+
+  // For Crossword mode
+  crosswordGrid?: (string | null)[][];
+  crosswordClues?: {
+    across: CrosswordClue[];
+    down: CrosswordClue[];
+  };
 }
 
 export interface ValidationResult {
@@ -89,4 +106,9 @@ export interface ValidationResult {
 
   // For Order mode
   accuracy?: number;
+}
+
+export interface CrosswordValidationResult {
+    isCorrect: boolean;
+    letterResults?: (boolean | null)[][];
 }

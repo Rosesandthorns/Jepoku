@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { Puzzle, JepokuMode } from './definitions';
+import type { Puzzle, JepokuMode } from '@/lib/definitions';
 import { createStandardPuzzle } from './puzzle-generators/standard-puzzle';
 import { createOddOneOutPuzzle } from './puzzle-generators/odd-one-out-puzzle';
 import { createImposterPuzzle } from './puzzle-generators/imposter-puzzle';
@@ -11,6 +11,7 @@ import { createDualPuzzle } from './puzzle-generators/dual-puzzle';
 import { createDexPuzzle } from './puzzle-generators/dex-puzzle';
 import { createCriteriaPuzzle } from './puzzle-generators/criteria-puzzle';
 import { createEasyCriteriaPuzzle } from './puzzle-generators/easy-criteria-puzzle';
+import { createCrosswordPuzzle } from './puzzle-generators/crossword-puzzle';
 
 
 export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
@@ -31,6 +32,8 @@ export async function generatePuzzle(mode: JepokuMode): Promise<Puzzle | null> {
             return createCriteriaPuzzle();
         case 'easy-criteria':
             return createEasyCriteriaPuzzle();
+        case 'crossword':
+            return createCrosswordPuzzle();
         case 'easy':
         case 'normal':
         case 'hard':

@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { Puzzle, ValidationResult, JepokuMode, Pokemon } from '@/lib/definitions';
+import type { Puzzle, ValidationResult, JepokuMode, Pokemon, CrosswordValidationResult } from '@/lib/definitions';
 import { generatePuzzle } from '@/lib/puzzle-generator';
 import { lcs } from '@/lib/lcs';
 import { getPokemonCriteria } from '@/lib/criteria';
@@ -30,6 +30,56 @@ export async function getPokemonNames(): Promise<{value: string, label: string}[
         value: p.name,
         label: p.name.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
     }));
+}
+
+export async function checkCrossword(
+  prevState: CrosswordValidationResult,
+  formData: FormData
+): Promise<CrosswordValidationResult> {
+  const puzzleString = formData.get('puzzle') as string;
+  const playerAnswersString = formData.get('playerAnswers') as string;
+  if (!puzzleString || !playerAnswersString) {
+    return { isCorrect: false };
+  }
+
+  const puzzle: Puzzle = JSON.parse(puzzleString);
+  const playerAnswers: Record<string, string> = JSON.parse(playerAnswersString);
+  const { crosswordClues } = puzzle;
+
+  if (!crosswordClues) {
+    return { isCorrect: false };
+  }
+
+  let allCorrect = true;
+  const letterResults: (boolean | null)[][] = puzzle.crosswordGrid!.map(row => row.map(() => null));
+
+  for (const clue of [...crosswordClues.across, ...crosswordClues.down]) {
+    const playerAnswer = playerAnswers[`${clue.direction}-${clue.number}`]?.toLowerCase();
+    const correctAnswer = clue.answer.toLowerCase();
+
+    if (playerAnswer !== correctAnswer) {
+      allCorrect = false;
+    }
+    
+    // Provide feedback on each letter
+    let { row, col } = clue;
+    for (let i = 0; i < correctAnswer.length; i++) {
+        const playerLetter = playerAnswer?.[i];
+        const correctLetter = correctAnswer[i];
+        
+        if (playerLetter) {
+            letterResults[row][col] = playerLetter === correctLetter;
+        }
+
+        if (clue.direction === 'across') col++;
+        else row++;
+    }
+  }
+
+  return {
+    isCorrect: allCorrect,
+    letterResults,
+  };
 }
 
 
@@ -201,5 +251,3 @@ export async function checkAnswers(
     };
   }
 }
-
-    

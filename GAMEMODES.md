@@ -25,6 +25,12 @@ This document provides a brief overview of each game mode available in Jepoku.
 - **Mechanic**: Each row and column has *two* criteria that you must guess: one from the "Normal" pool and one from the "Hard" pool. Each Pokémon on the grid must satisfy all four criteria for its position (two for its row, two for its column).
 - **Goal**: Guess all 12 criteria correctly.
 
+### Crossword Mode
+- **Grid Size**: Variable crossword grid.
+- **Clues**: Pokémon types (e.g., "Fire / Flying").
+- **Mechanic**: A classic crossword puzzle where all the answers are Pokémon names. You must fill in the grid based on the type combination clues provided for each "Across" and "Down" entry.
+- **Goal**: Correctly fill out the entire crossword with the right Pokémon names.
+
 ## Challenge Modes
 
 ### Dex Mode
