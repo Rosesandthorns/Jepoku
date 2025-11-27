@@ -1,9 +1,14 @@
 
 'use server';
 
-import type { Puzzle } from '@/lib/definitions';
+import type { Puzzle, Pokemon } from '@/lib/definitions';
 import { getAllPokemonWithDetails } from '@/lib/pokedex';
 import { shuffle } from './utils';
+
+const generationToIdMap: { [key: string]: number } = {
+    'Kanto': 1, 'Johto': 2, 'Hoenn': 3, 'Sinnoh': 4,
+    'Unova': 5, 'Kalos': 6, 'Alola': 7, 'Galar': 8, 'Paldea': 9,
+}
 
 function formatString(str: string): string {
     if (!str) return 'N/A';
@@ -20,23 +25,28 @@ export async function createEasyCriteriaPuzzle(): Promise<Puzzle | null> {
 
     const targetPokemon = shuffle(allPokemon)[0];
     const clues: { label: string; value: string }[] = [];
+    const genId = generationToIdMap[targetPokemon.region] || 0;
 
-    // --- Fixed Order Clues ---
+    // --- New Fixed Order Clues ---
     clues.push({ label: 'Type 1', value: formatString(targetPokemon.types[0]) });
     clues.push({ label: 'Type 2', value: targetPokemon.types[1] ? formatString(targetPokemon.types[1]) : 'None' });
     
-    clues.push({ label: 'Region', value: targetPokemon.region });
+    clues.push({ label: 'Generation Era', value: genId >= 5 ? 'Gen 5 or Above' : 'Gen 4 or Below' });
+
+    clues.push({ label: 'Primary Egg Group', value: targetPokemon.eggGroups.length > 0 ? formatString(targetPokemon.eggGroups[0]) : 'None' });
+    
+    clues.push({ label: 'Generation', value: targetPokemon.region });
+    
+    clues.push({ label: 'Base Stat Total', value: Object.values(targetPokemon.stats).reduce((a, b) => a + b, 0).toString() });
+    
+    clues.push({ label: 'Pokédex Number', value: targetPokemon.id.toString() });
+
+    clues.push({ label: 'A Possible Ability', value: formatString(shuffle(targetPokemon.abilities)[0]) });
 
     let evoStatus = 'Does Not Evolve';
     if (targetPokemon.canEvolve) evoStatus = 'Can Evolve';
     else if (targetPokemon.isFinalEvolution) evoStatus = 'Final Evolution';
     clues.push({ label: 'Evolution Status', value: evoStatus });
-    
-    clues.push({ label: 'Pokédex Number', value: targetPokemon.id.toString() });
-
-    clues.push({ label: 'A Possible Ability', value: formatString(shuffle(targetPokemon.abilities)[0]) });
-    
-    clues.push({ label: 'Base Stat Total', value: Object.values(targetPokemon.stats).reduce((a, b) => a + b, 0).toString() });
 
 
     console.log(`[easy-criteria] Successfully generated puzzle. Target: ${targetPokemon.name}`);
