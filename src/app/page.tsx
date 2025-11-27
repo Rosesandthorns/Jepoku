@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Menu } from 'lucide-react';
 import { RefreshButton } from '@/components/refresh-button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function HomePage() {
   return (
@@ -29,60 +30,62 @@ export default function HomePage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Game Modes</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=easy" >Easy Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/" >Normal Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=hard" >Hard Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=dual" >Dual Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=dex" >Dex Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=sprite" >Sprite Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=timer" >Timer Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=blinded" >Blinded Mode</Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                    <Link href="/?mode=order" >Order Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=odd-one-out" >Odd one out</Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                    <Link href="/?mode=miss-matched" >Miss Matched</Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                    <Link href="/?mode=imposter" >Imposter</Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                    <Link href="/?mode=ditto" >Ditto Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=criteria" >Criteria Mode</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/?mode=easy-criteria" >Easy Criteria</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
-                <DropdownMenuItem disabled>
-                    Scarred Mode
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <RefreshButton />
+                <ScrollArea className="h-[400px] w-48 rounded-md">
+                    <DropdownMenuLabel>Game Modes</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=easy" >Easy Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/" >Normal Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=hard" >Hard Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=dual" >Dual Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=dex" >Dex Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=sprite" >Sprite Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=timer" >Timer Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=blinded" >Blinded Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=order" >Order Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=odd-one-out" >Odd one out</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=miss-matched" >Miss Matched</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=imposter" >Imposter</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=ditto" >Ditto Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=criteria" >Criteria Mode</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/?mode=easy-criteria" >Easy Criteria</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
+                    <DropdownMenuItem disabled>
+                        Scarred Mode
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <RefreshButton />
+                </ScrollArea>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
