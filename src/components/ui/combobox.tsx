@@ -48,7 +48,7 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className="w-full justify-between bg-white text-black hover:bg-gray-200 hover:text-black"
           disabled={disabled}
         >
           {value
