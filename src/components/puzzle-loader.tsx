@@ -42,13 +42,14 @@ function PuzzleLoaderInternal() {
     (modeParam === 'sprite' ? 'sprite' : 
     (modeParam === 'dex' ? 'dex' : 
     (modeParam === 'dual' ? 'dual' : 
-    (modeParam === 'criteria' ? 'criteria' : 'normal')))))))))))));
+    (modeParam === 'criteria' ? 'criteria' : 
+    (modeParam === 'easy-criteria' ? 'easy-criteria' : 'normal'))))))))))))));
   
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (['timer', 'ditto', 'criteria'].includes(mode)) {
+    if (['timer', 'ditto', 'criteria', 'easy-criteria'].includes(mode)) {
       setPuzzle(null); // These modes manage their own puzzle loading
       return;
     }
@@ -70,8 +71,8 @@ function PuzzleLoaderInternal() {
     return <DittoModeBoard getPuzzleAction={getNewPuzzle} checkAnswersAction={checkAnswers} />;
   }
   
-  if (mode === 'criteria') {
-    return <CriteriaModeBoard getPuzzleAction={getNewPuzzle} getPokemonNamesAction={getPokemonNames} />;
+  if (mode === 'criteria' || mode === 'easy-criteria') {
+    return <CriteriaModeBoard getPuzzleAction={getNewPuzzle} getPokemonNamesAction={getPokemonNames} mode={mode} />;
   }
 
 

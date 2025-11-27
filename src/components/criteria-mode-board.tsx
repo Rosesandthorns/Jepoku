@@ -26,12 +26,13 @@ import {
 interface CriteriaModeBoardProps {
   getPuzzleAction: (mode: JepokuMode) => Promise<Puzzle | null>;
   getPokemonNamesAction: () => Promise<{ value: string; label: string }[]>;
+  mode: 'criteria' | 'easy-criteria';
 }
 
 const TOTAL_TIME = 120; // 2 minutes
 const CLUE_INTERVAL = 15; // 15 seconds
 
-export function CriteriaModeBoard({ getPuzzleAction, getPokemonNamesAction }: CriteriaModeBoardProps) {
+export function CriteriaModeBoard({ getPuzzleAction, getPokemonNamesAction, mode }: CriteriaModeBoardProps) {
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [pokemonNames, setPokemonNames] = useState<{ value: string; label: string }[]>([]);
   const [guess, setGuess] = useState('');
@@ -42,11 +43,11 @@ export function CriteriaModeBoard({ getPuzzleAction, getPokemonNamesAction }: Cr
 
   const fetchPuzzle = useCallback(() => {
     startTransition(async () => {
-      const newPuzzle = await getPuzzleAction('criteria');
+      const newPuzzle = await getPuzzleAction(mode);
       setPuzzle(newPuzzle);
       resetGame();
     });
-  }, [getPuzzleAction]);
+  }, [getPuzzleAction, mode]);
 
   useEffect(() => {
     getPokemonNamesAction().then(setPokemonNames);
@@ -105,13 +106,22 @@ export function CriteriaModeBoard({ getPuzzleAction, getPokemonNamesAction }: Cr
     }
   };
 
+  const title = mode === 'easy-criteria' ? 'Easy Criteria Mode' : 'Criteria Mode';
+  const description = mode === 'easy-criteria' 
+    ? 'Guess the Pokémon! Clues are revealed in a fixed order.'
+    : 'Guess the Pokémon based on the clues!';
+  const helpText = mode === 'easy-criteria'
+    ? 'A new clue is revealed every 15 seconds. Clues always appear in the same order.'
+    : 'A new clue is revealed every 15 seconds. Clues appear in a random order.';
+
+
   if (isPending || !puzzle) {
     return (
       <Card className="text-center">
         <CardHeader>
           <CardTitle className="flex items-center justify-center gap-2">
             <Loader2 className="animate-spin" />
-            Preparing Criteria Mode
+            Preparing {title}
           </CardTitle>
           <CardDescription>Getting a secret Pokémon ready for you to guess.</CardDescription>
         </CardHeader>
@@ -128,8 +138,8 @@ export function CriteriaModeBoard({ getPuzzleAction, getPokemonNamesAction }: Cr
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle className="text-2xl">Criteria Mode</CardTitle>
-                <CardDescription className="text-gray-300 mt-1">Guess the Pokémon based on the clues!</CardDescription>
+                <CardTitle className="text-2xl">{title}</CardTitle>
+                <CardDescription className="text-gray-300 mt-1">{description}</CardDescription>
             </div>
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -138,7 +148,7 @@ export function CriteriaModeBoard({ getPuzzleAction, getPokemonNamesAction }: Cr
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                   <p>A new clue is revealed every 15 seconds. Guess the Pokémon!</p>
+                   <p>{helpText}</p>
                 </TooltipContent>
             </Tooltip>
         </div>

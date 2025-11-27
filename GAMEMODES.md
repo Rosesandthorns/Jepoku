@@ -81,8 +81,14 @@ This document provides a brief overview of each game mode available in Jepoku.
 
 ### Criteria Mode
 - **Grid Size**: 1 Pokémon to guess
-- **Criteria**: A series of clues are revealed every 15 seconds.
-- **Mechanic**: A 2-minute timer starts. The player must guess the Pokémon's name based on an expanding list of clues like its type, generation, abilities, and more.
+- **Criteria**: A series of clues are revealed every 15 seconds from a large, varied pool.
+- **Mechanic**: A 2-minute timer starts. The player must guess the Pokémon's name based on an expanding, randomly ordered list of clues.
+- **Goal**: Guess the Pokémon before time runs out.
+
+### Easy Criteria Mode
+- **Grid Size**: 1 Pokémon to guess
+- **Criteria**: A small set of basic clues are revealed every 15 seconds.
+- **Mechanic**: A 2-minute timer starts. The player must guess the Pokémon's name based on an expanding, fixed-order list of clues (e.g., Type 1, Type 2, Region...).
 - **Goal**: Guess the Pokémon before time runs out.
 
 ## Coming Soon
