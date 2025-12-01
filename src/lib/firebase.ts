@@ -20,7 +20,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Analytics and get a reference to the service
-const analytics = isSupported().then(yes => yes ? getAnalytics(app) : null);
+// Initialize Analytics and get a reference to the service, but only on the client side.
+const analytics = typeof window !== 'undefined' ? isSupported().then(yes => yes ? getAnalytics(app) : null) : Promise.resolve(null);
+
 
 export { app, analytics };
