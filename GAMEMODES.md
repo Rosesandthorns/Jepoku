@@ -96,8 +96,3 @@ This document provides a brief overview of each game mode available in Jepoku.
 - **Criteria**: A small set of basic clues are revealed every 15 seconds.
 - **Mechanic**: A 2-minute timer starts. The player must guess the Pokémon's name based on an expanding, fixed-order list of clues (e.g., Type 1, Type 2, Region...).
 - **Goal**: Guess the Pokémon before time runs out.
-
-## Coming Soon
-
-### Scarred Mode
-- This mode is currently under development. It is planned to be a 6x6 grid using "Hard Mode" criteria with the "Blinded Mode" visibility mechanic.

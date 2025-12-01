@@ -82,11 +82,6 @@ export default function HomePage() {
                         <Link href="/?mode=easy-criteria" >Easy Criteria</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Coming Soon</DropdownMenuLabel>
-                    <DropdownMenuItem disabled>
-                        Scarred Mode
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
                     <RefreshButton />
                 </ScrollArea>
               </DropdownMenuContent>
