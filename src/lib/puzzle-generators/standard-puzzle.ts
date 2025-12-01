@@ -14,10 +14,6 @@ export async function createStandardPuzzle(mode: JepokuMode): Promise<Puzzle | n
         return null;
     }
 
-    if (mode === 'ditto') {
-        allPokemon = allPokemon.filter(p => p.name !== 'ditto');
-    }
-
     const isBlindedLike = mode === 'blinded';
     const isHardLike = mode === 'hard' || mode === 'imposter';
     const gridSize = isBlindedLike ? 5 : 3;

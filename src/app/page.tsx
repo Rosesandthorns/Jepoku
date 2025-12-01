@@ -73,9 +73,6 @@ export default function HomePage() {
                         <Link href="/?mode=imposter" >Imposter</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link href="/?mode=ditto" >Ditto Mode</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
                         <Link href="/?mode=criteria" >Criteria Mode</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

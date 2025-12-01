@@ -8,7 +8,6 @@ import { GameBoard } from '@/components/game-board';
 import { MissMatchedBoard } from '@/components/miss-matched-board';
 import { TimerModeBoard } from '@/components/timer-mode-board';
 import { OrderModeBoard } from '@/components/order-mode-board';
-import { DittoModeBoard } from '@/components/ditto-mode-board';
 import { DualModeBoard } from '@/components/dual-mode-board';
 import { DexModeBoard } from '@/components/dex-mode-board';
 import { CriteriaModeBoard } from '@/components/criteria-mode-board';
@@ -39,7 +38,6 @@ function PuzzleLoaderInternal() {
     (modeParam === 'miss-matched' ? 'miss-matched' : 
     (modeParam === 'timer' ? 'timer' : 
     (modeParam === 'order' ? 'order' : 
-    (modeParam === 'ditto' ? 'ditto' : 
     (modeParam === 'sprite' ? 'sprite' : 
     (modeParam === 'dex' ? 'dex' : 
     (modeParam === 'dual' ? 'dual' : 
@@ -51,7 +49,7 @@ function PuzzleLoaderInternal() {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (['timer', 'ditto', 'criteria', 'easy-criteria'].includes(mode)) {
+    if (['timer', 'criteria', 'easy-criteria'].includes(mode)) {
       setPuzzle(null); // These modes manage their own puzzle loading
       return;
     }
@@ -67,10 +65,6 @@ function PuzzleLoaderInternal() {
 
   if (mode === 'timer') {
     return <TimerModeBoard getPuzzleAction={getNewPuzzle} checkAnswersAction={checkAnswers} />;
-  }
-  
-  if (mode === 'ditto') {
-    return <DittoModeBoard getPuzzleAction={getNewPuzzle} checkAnswersAction={checkAnswers} />;
   }
   
   if (mode === 'criteria' || mode === 'easy-criteria') {
