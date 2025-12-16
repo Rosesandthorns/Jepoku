@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { Puzzle } from '@/lib/definitions';
+import type { Puzzle, Pokemon } from '@/lib/definitions';
 import { getAllPokemonWithDetails } from '@/lib/pokedex';
 import { getPokemonCriteria } from '@/lib/criteria';
 import { shuffle } from './utils';
@@ -21,11 +21,10 @@ export async function createImposterPuzzle(): Promise<Puzzle | null> {
         const basePuzzle = await createStandardPuzzle('imposter');
         if (!basePuzzle) continue;
     
-        const { grid, rowAnswers, colAnswers } = basePuzzle;
-        const usedPokemonIds = new Set(grid.flat().map(p => p.id));
-        
-        const imposterRow = Math.floor(Math.random() * gridSize);
-        const imposterCol = Math.floor(Math.random() * gridSize);
+            const { grid, rowAnswers, colAnswers } = basePuzzle;
+            const usedPokemonIds = new Set(grid.flat().filter((p): p is Pokemon => p !== null).map(p => p.id));
+            
+            const imposterRow = Math.floor(Math.random() * gridSize);        const imposterCol = Math.floor(Math.random() * gridSize);
         const imposterCoord = { row: imposterRow, col: imposterCol };
         
         const originalPokemon = grid[imposterRow][imposterCol];

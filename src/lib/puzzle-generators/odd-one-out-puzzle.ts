@@ -25,11 +25,11 @@ export async function createOddOneOutPuzzle(): Promise<Puzzle | null> {
         const basePuzzle = await createStandardPuzzle('blinded');
         if (!basePuzzle) continue;
         
-        const { grid, rowAnswers, colAnswers } = basePuzzle;
-        const usedPokemonIds = new Set(grid.flat().map(p => p.id));
-        
-        const imposterCoords: {row: number, col: number}[] = [];
-        const rowIndices = shuffle(Array.from({length: gridSize}, (_, i) => i));
+    const { grid, rowAnswers, colAnswers } = basePuzzle;
+    const usedPokemonIds = new Set(grid.flat().filter((p): p is Pokemon => p !== null).map(p => p.id));
+    
+    const imposterCoords: {row: number, col: number}[] = [];
+    const rowIndices = shuffle(Array.from({length: gridSize}, (_, i) => i));
         const colIndices = shuffle(Array.from({length: gridSize}, (_, i) => i));
         for(let i = 0; i < gridSize; i++) {
             imposterCoords.push({row: rowIndices[i], col: colIndices[i]});
