@@ -29,21 +29,29 @@ function PuzzleLoaderInternal() {
   const searchParams = useSearchParams();
   const modeParam = searchParams.get('mode');
 
-  const mode: JepokuMode = 
-    modeParam === 'hard' ? 'hard' : 
-    (modeParam === 'blinded' ? 'blinded' : 
-    (modeParam === 'easy' ? 'easy' : 
-    (modeParam === 'odd-one-out' ? 'odd-one-out' : 
-    (modeParam === 'imposter' ? 'imposter' : 
-    (modeParam === 'miss-matched' ? 'miss-matched' : 
-    (modeParam === 'timer' ? 'timer' : 
-    (modeParam === 'order' ? 'order' : 
-    (modeParam === 'sprite' ? 'sprite' : 
-    (modeParam === 'dex' ? 'dex' : 
-    (modeParam === 'dual' ? 'dual' : 
-    (modeParam === 'criteria' ? 'criteria' : 
-    (modeParam === 'easy-criteria' ? 'easy-criteria' :
-    (modeParam === 'crossword' ? 'crossword' : 'normal')))))))))))))));
+  const getMode = (param: string | null): JepokuMode => {
+    switch (param) {
+      case 'hard':
+      case 'blinded':
+      case 'easy':
+      case 'odd-one-out':
+      case 'imposter':
+      case 'miss-matched':
+      case 'timer':
+      case 'order':
+      case 'sprite':
+      case 'dex':
+      case 'dual':
+      case 'criteria':
+      case 'easy-criteria':
+      case 'crossword':
+        return param;
+      default:
+        return 'normal';
+    }
+  }
+
+  const mode: JepokuMode = getMode(modeParam);
   
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [isPending, startTransition] = useTransition();
