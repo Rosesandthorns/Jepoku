@@ -49,7 +49,7 @@ function PuzzleLoaderInternal() {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (['timer', 'criteria', 'easy-criteria'].includes(mode)) {
+    if (['timer', 'criteria', 'easy-criteria', 'crossword'].includes(mode)) {
       setPuzzle(null); // These modes manage their own puzzle loading
       return;
     }
