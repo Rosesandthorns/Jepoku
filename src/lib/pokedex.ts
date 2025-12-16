@@ -59,6 +59,11 @@ interface PokeApiFlavorTextEntry {
     language: PokeApiResource;
 }
 
+interface PokeApiVariety {
+    is_default: boolean;
+    pokemon: PokeApiResource;
+}
+
 interface PokeApiSpecies {
     id: number;
     name: string;
@@ -69,6 +74,7 @@ interface PokeApiSpecies {
     is_mythical: boolean;
     flavor_text_entries: PokeApiFlavorTextEntry[];
     egg_groups: PokeApiResource[];
+    varieties: PokeApiVariety[];
 }
 
 interface EvolutionNode {
@@ -79,14 +85,6 @@ interface EvolutionNode {
 interface PokeApiEvolutionChain {
     id: number;
     chain: EvolutionNode;
-}
-
-interface PokeApiVariety {
-    is_default: boolean;
-    pokemon: PokeApiResource;
-}
-interface PokeApiPokemonSpecies {
-    varieties: PokeApiVariety[];
 }
 
 const generationToRegionMap: { [key: string]: string } = {
@@ -146,17 +144,6 @@ export const getPokemonTypes = unstable_cache(
   { revalidate: 3600 } // Revalidate once an hour
 );
 
-async function hasMegaEvolution(pokemonName: string): Promise<boolean> {
-    try {
-        const speciesRes = await fetch(`${POKEAPI_URL}/pokemon-species/${pokemonName}`);
-        if (!speciesRes.ok) return false;
-        const speciesData: PokeApiPokemonSpecies = await speciesRes.json();
-        return speciesData.varieties.some(v => !v.is_default && v.pokemon.name.includes('-mega'));
-    } catch {
-        return false;
-    }
-}
-
 function getEvolutionLineSize(chain: EvolutionNode): number {
     let size = 0;
     const queue = [chain];
@@ -173,11 +160,14 @@ function getEvolutionLineSize(chain: EvolutionNode): number {
 export const getAllPokemonWithDetails = unstable_cache(
   async (): Promise<Pokemon[]> => {
     try {
+      console.log('Fetching all Pokemon details...');
       const response = await fetch(`${POKEAPI_URL}/pokemon?limit=${POKEMON_COUNT}`);
       if (!response.ok) throw new Error('Failed to fetch Pokemon list');
       const listData = await response.json();
 
-      const pokemonPromises: Promise<Pokemon | null>[] = listData.results.map(async (p: PokeApiResource) => {
+      const evolutionChainCache = new Map<string, PokeApiEvolutionChain>();
+      
+      const processPokemon = async (p: PokeApiResource): Promise<Pokemon | null> => {
         try {
           const pokemonRes = await fetch(p.url);
           if (!pokemonRes.ok) return null;
@@ -187,10 +177,17 @@ export const getAllPokemonWithDetails = unstable_cache(
           if (!speciesRes.ok) return null;
           const speciesData: PokeApiSpecies = await speciesRes.json();
 
-          const evolutionChainRes = await fetch(speciesData.evolution_chain.url);
-          if (!evolutionChainRes.ok) return null;
-          const evolutionChainData: PokeApiEvolutionChain = await evolutionChainRes.json();
+          let evolutionChainData = evolutionChainCache.get(speciesData.evolution_chain.url);
+          if (!evolutionChainData) {
+              const evolutionChainRes = await fetch(speciesData.evolution_chain.url);
+              if (evolutionChainRes.ok) {
+                  evolutionChainData = await evolutionChainRes.json();
+                  evolutionChainCache.set(speciesData.evolution_chain.url, evolutionChainData!);
+              }
+          }
           
+          if (!evolutionChainData) return null;
+
           const evolutionLineSize = getEvolutionLineSize(evolutionChainData.chain);
 
           let canEvolve = false;
@@ -212,7 +209,7 @@ export const getAllPokemonWithDetails = unstable_cache(
               isFinalEvolution = evolutionNode.evolves_to.length === 0 && !!speciesData.evolves_from_species;
           }
 
-          const isMega = await hasMegaEvolution(pokemonData.name);
+          const isMega = speciesData.varieties.some(v => !v.is_default && v.pokemon.name.includes('-mega'));
           const region = generationToRegionMap[speciesData.generation.name] || 'Unknown';
 
           const stats = { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 };
@@ -262,9 +259,20 @@ export const getAllPokemonWithDetails = unstable_cache(
           console.error(`Failed to process ${p.name}`, e)
           return null;
         }
-      });
+      };
 
-      const allPokemon = (await Promise.all(pokemonPromises)).filter((p): p is Pokemon => p !== null);
+      // Batch requests to prevent hitting rate limits or memory issues
+      const BATCH_SIZE = 20;
+      const allPokemon: Pokemon[] = [];
+      const items = listData.results as PokeApiResource[];
+
+      for (let i = 0; i < items.length; i += BATCH_SIZE) {
+          const batch = items.slice(i, i + BATCH_SIZE);
+          const batchResults = await Promise.all(batch.map(processPokemon));
+          allPokemon.push(...batchResults.filter((p): p is Pokemon => p !== null));
+      }
+
+      console.log(`Successfully fetched ${allPokemon.length} Pokemon details.`);
       return allPokemon;
     } catch (error) {
       console.error("Error fetching all Pokemon details:", error);
